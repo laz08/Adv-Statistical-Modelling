@@ -1,0 +1,209 @@
+---
+title: "Homework 1"
+author: "Laura Cebollero Ruiz, Alexandre Rodríguez Garau"
+date: "15/10/2018"
+output: pdf_document
+---
+
+
+
+```{r setup, include=FALSE}
+requiredPackages <- c("ggplot2", "car", "MASS", "devtools", "readr", "knitr", "easyGgplot2", "gridExtra", "doBy")
+
+for (pac in requiredPackages) {
+    if(!require(pac,  character.only=TRUE)){
+        install.packages(pac, repos="http://cran.rstudio.com")
+        library(pac,  character.only=TRUE)
+    } 
+}
+rm(pac)
+rm(requiredPackages)
+```
+
+#A
+
+First of all we will load the data and take a look at its summary:
+
+```{r}
+Iogurt <- read_delim("Iogurt.csv", ";", escape_double = FALSE, 
+    trim_ws = TRUE)
+#Iogurt$Ferm = as.factor(Iogurt$Ferm)
+Iogurt$Ferm = as.character(Iogurt$Ferm)
+Iogurt$dia = as.factor(Iogurt$dia)
+
+
+kable(summary(Iogurt))
+
+```
+
+We can see that the observations from this dataset are divided into 2 groups that are defined by the variable `Ferm`, which is the fermentation temperature. Also the groups have the same size ---30 individuals per group. As stated by  the problem statement, the explanatory variables are `dia` and `Ferm` and the response vars are `pH`, `strep` and `lactob`. 
+
+We can see that the mean of the variable `pH` is 378 but the minimum value is 4. The same happens with the variables `strep` and `lactob`. This could indicate that we might have some outliers in our dataset. In order to see it in a visual way we will plot the boxplots:
+
+```{r}
+par(mfrow=c(1,3))
+
+boxplot(Iogurt$pH ~ Iogurt$Ferm)
+boxplot(Iogurt$lactob ~ Iogurt$Ferm)
+boxplot(Iogurt$strep ~ Iogurt$Ferm)
+```
+We can see clearly that there are some values that really differ from the rest of the values by many standard deviations. Hence we can safely delete these values.
+
+```{r}
+Iogurt <- Iogurt[Iogurt$pH     > 200, ]
+Iogurt <- Iogurt[Iogurt$strep  > 200, ]
+Iogurt <- Iogurt[Iogurt$lactob > 200, ]
+```
+
+```{r}
+par(mfrow=c(1,3))
+
+boxplot(Iogurt$pH ~ Iogurt$Ferm)
+boxplot(Iogurt$lactob ~ Iogurt$Ferm)
+boxplot(Iogurt$strep ~ Iogurt$Ferm)
+```
+
+Now that we have removed the outliers, let's take a look at the plot of the different response variables with the explanatory variable `dia` in the x axe. Also, we will use the `Ferm` variable to see which individials belong to one group or the other. 
+
+```{r}
+#ggplot2.scatterplot(data=Iogurt, xName='dia', yName='strep', groupName="Ferm", addRegLine=TRUE, regLineColor="blue")
+#qplot(dia, strep, data=Iogurt, shape = Ferm)
+
+ggplot(Iogurt, aes(x=dia, y=pH, color=Ferm)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + 
+    geom_smooth(method=lm,   
+                se=FALSE,    
+                fullrange=TRUE) 
+
+ggplot(Iogurt, aes(x=dia, y=strep, color=Ferm)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + 
+    geom_smooth(method=lm,   
+                se=FALSE,    
+                fullrange=TRUE)
+
+ggplot(Iogurt, aes(x=dia, y=lactob, color=Ferm)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + 
+    geom_smooth(method=lm,   
+                se=FALSE,    
+                fullrange=TRUE) 
+```
+
+
+
+[interpret Plots a little]
+
+Now we will create a table where we will see the basic descriptive measures for every possible value of day. If we take a look at the variable we can see that it ranges from 0 to 28 but only takes the values 0, 7, 14, 21 and 28.
+
+```{r}
+Idf <- as.data.frame(Iogurt)
+
+kable(te <- summaryBy(cbind(pH, lactob, strep)~ dia * Ferm, data = Idf, FUN = c(mean, sd)))
+```
+
+As we can see in the table we have 10 rows. Each row shows the mean and the standard deviation of the observations from a determined day ---0, 7, 14, 21 or 28--- and type of fermentation ---T42 or T43.5. Since `dia` has 5 possible values and `Ferm` has to we obtain $2\cdot5 = 10$ possible combinations.
+
+[Comentar taula]
+
+#B
+
+Since we can assume that the variable `pH` follows a normal distribution we will proceed to check whether differences exist between the mean of the `pH` values of one group and another. In order to be sure that the variable `dia` doesn't affect us we will take all those values that belong to the day 7. 
+
+Now we will separate the values into 2 separate groups depending on their `Ferm` value and then take only the rows that belong to day 7.
+
+
+```{r}
+I42 <- Iogurt[Iogurt$Ferm == "T42" ,]
+I43 <- Iogurt[Iogurt$Ferm == "T43.5", ]
+
+I42_7 <- I42[I42$dia == 7, ]
+I43_7 <- I43[I43$dia == 7, ]
+```
+
+Once we have separated our data and only taken the observations that belong to day 7, we are ready to perform both T-Test and a F Test to see it there really exist any significant differences between the means and to check if the variances are equal.
+
+```{r}
+t.test(I42_7$pH, I43_7$pH)
+
+var.test(I42_7$pH, I43_7$pH)
+```
+
+For the means we can see that the p-value that we obtain is lower than 0.05, which means that we have to reject the null hypothesis and accept that "true difference in means is not equal to 0", in other words: the means are not the same for both groups. 
+
+However the F test does return a high p-value of 0.587 which leads to believe that the variances of both groups are indeed equal ---i.e. true ratio of variances is equal to 1. 
+
+To move on we will check the same we just did for the other two response variables `lactob` and `strep`. Also we will check it for the rest of days.
+
+```{r}
+I42_0 <- I42[I42$dia == 0, ]
+I43_0 <- I43[I43$dia == 0, ]
+
+I42_14 <- I42[I42$dia == 14, ]
+I43_14 <- I43[I43$dia == 14, ]
+
+I42_21 <- I42[I42$dia == 21, ]
+I43_21 <- I43[I43$dia == 21, ]
+
+I42_28 <- I42[I42$dia == 28, ]
+I43_28 <- I43[I43$dia == 28, ]
+
+
+t.test(I42_0$lactob, I43_0$lactob)
+var.test(I42_0$lactob, I43_0$lactob)
+
+t.test(I42_14$lactob, I43_14$lactob)
+var.test(I42_14$lactob, I43_14$lactob)
+
+t.test(I42_21$lactob, I43_21$lactob)
+var.test(I42_21$lactob, I43_21$lactob)
+
+t.test(I42_28$lactob, I43_28$lactob)
+var.test(I42_28$lactob, I43_28$lactob)
+
+t.test(I42_0$strep, I43_0$strep)
+var.test(I42_0$strep, I43_0$strep)
+
+t.test(I42_14$strep, I43_14$strep)
+var.test(I42_14$strep, I43_14$strep)
+
+t.test(I42_21$strep, I43_21$strep)
+var.test(I42_21$strep, I43_21$strep)
+
+t.test(I42_28$strep, I43_28$strep)
+var.test(I42_28$strep, I43_28$strep)
+```
+
+As we can see, contrary to the previous t-test, all means are equal except for the day 0 and the variable `strep`, which has a p-value of 0.0387. Also, for both `strep` and `lactob` the ratios of variances are equal to 1.
+
+#C
+
+Let's try to predict the value of the variables `srtep` and `lactob` from the variable `pH`. To do that we will create a linear model for both. This linear model will look like $$strep = \beta_1 \cdot pH + \beta_0 + e$$
+
+```{r}
+model_strep <- lm(strep ~ pH, Iogurt)
+summary(model_strep)
+```
+
+According to the linear model the expression that best predicts the value of `strep` in term of `pH` is: 
+$$strep = 1.244 \cdot pH + 219.99 $$
+If we look at the adjusted $R^2$ we can see that the data points fit quite well the regression line. We know that if the pH of a yoghurt is lower than 4 that yoghurt is expired. If we wanted to know what the minimum value that `strep` has to have to consider a yoghurt expired we just need to substitute `pH` in the formula for 4. 
+
+$$strep = 1.244 \cdot 4 + 219.99 = 224.966$$
+
+According to this linear model, all those observations that have a `strep` value lower than 224.966 can be considered expired yoghurts. 
+
+In the same way we can do the same to predict the value of `lactob` from the variable `pH`.
+
+```{r}
+model_lactob <- lm(lactob ~ pH, Iogurt)
+summary(model_lactob)
+```
+This linear model looks like the following:
+
+$$lactob = 0.908 \cdot pH + 375.56$$
+
+If we do the same as before to calculate the minimum `lactob` value for an expired yoghurt we just need to plug 4 into `pH`. 
+
+$$lactob = 0.908 \cdot 4 + 375.56 = 379.19$$
+
+[Most accurate Model???]
+[Conclusions]
