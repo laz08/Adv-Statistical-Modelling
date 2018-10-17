@@ -1,6 +1,7 @@
 ---
 title: "Homework 1"
 author: "Laura Cebollero Ruiz, Alexandre Rodríguez Garau"
+geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
 date: "15/10/2018"
 output: pdf_document
 ---
@@ -18,36 +19,77 @@ for (pac in requiredPackages) {
 }
 rm(pac)
 rm(requiredPackages)
+
+
+# Set WD and load data
+wd = getwd()
+if(grepl("nora", wd)) {
+    setwd("~/Documents/18-19/ASM/HW/01")
+} else {
+  #setwd("")
+}
+rm(wd)
 ```
 
-#A
+# Part A
 
-First of all we will load the data and take a look at its summary:
+First of all we will load the data. As described by  the problem statement, the explanatory
+variables are `dia` and `Ferm` and the response vars are `pH`, `strep` and `lactob`.
 
-```{r}
+Since we know beforehand that the `Ferm` variable, which refers to
+Fermentation temperature, describes on to which group the Iogurt is from, we interpret it as a factor (a.k.a level).
+
+The same interpretation rule is applied to dia, for it is not a continuous variable
+(a iogurt cannot be fermented by 3.5 days, for example).
+
+```{r message=FALSE}
 Iogurt <- read_delim("Iogurt.csv", ";", escape_double = FALSE, 
     trim_ws = TRUE)
-#Iogurt$Ferm = as.factor(Iogurt$Ferm)
-Iogurt$Ferm = as.character(Iogurt$Ferm)
+Iogurt$Ferm = as.factor(Iogurt$Ferm)
 Iogurt$dia = as.factor(Iogurt$dia)
-
-
-kable(summary(Iogurt))
-
 ```
 
-We can see that the observations from this dataset are divided into 2 groups that are defined by the variable `Ferm`, which is the fermentation temperature. Also the groups have the same size ---30 individuals per group. As stated by  the problem statement, the explanatory variables are `dia` and `Ferm` and the response vars are `pH`, `strep` and `lactob`. 
+After deciding the type of each variable we can proceed onto taking a look at its 
+summary.
+```{r }
+kable(summary(Iogurt))
+```
 
-We can see that the mean of the variable `pH` is 378 but the minimum value is 4. The same happens with the variables `strep` and `lactob`. This could indicate that we might have some outliers in our dataset. In order to see it in a visual way we will plot the boxplots:
+For the `Ferm` we can see that there are 2 groups and each has the same size of 30 individuals per group.
+
+We can see that the mean of the variable `pH` is 378 but the minimum value is 4, and its maximum is 448.
+For the variable `strep`, with a mean of 671 its minimum is 71 and its maximum 782.
+And finally, for the variable `lactob`, its mean is 719 with a minimum of 74 and a maximum of 788. 
+
+This could indicate that we might have some **outliers** in our dataset for both the mean
+and median are **skewed and biased towards the maximum of each one of these 3 variables.**
+
+
+## Visual analysis
+In order to see it in a visual way we will plot the boxplots:
 
 ```{r}
-par(mfrow=c(1,3))
+par(mfrow=c(1,2))
 
-boxplot(Iogurt$pH ~ Iogurt$Ferm)
-boxplot(Iogurt$lactob ~ Iogurt$Ferm)
-boxplot(Iogurt$strep ~ Iogurt$Ferm)
+boxplot(Iogurt$pH ~ Iogurt$Ferm, 
+        main="pH ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature", 
+        ylab="pH")
+boxplot(Iogurt$lactob ~ Iogurt$Ferm, 
+        main="Lactobacillus ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature",
+        ylab="Lactobacillus concentration")
+boxplot(Iogurt$strep ~ Iogurt$Ferm, 
+         main="Streptococus ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature",
+        ylab="Streptococus concentration")
 ```
-We can see clearly that there are some values that really differ from the rest of the values by many standard deviations. Hence we can safely delete these values.
+
+
+We can see clearly that there are some values that really differ from the rest of the values by many standard deviations. Hence we can safely delete these values for we deem them as outliers and they bias our data, thus probably biasing our possible future modeling of it.
+
+So we have put a threshold on 200 units, but it could be higher, like 300. We are using it just to
+disregard the lowest values.
 
 ```{r}
 Iogurt <- Iogurt[Iogurt$pH     > 200, ]
@@ -56,55 +98,116 @@ Iogurt <- Iogurt[Iogurt$lactob > 200, ]
 ```
 
 ```{r}
-par(mfrow=c(1,3))
+par(mfrow=c(1,2))
 
-boxplot(Iogurt$pH ~ Iogurt$Ferm)
-boxplot(Iogurt$lactob ~ Iogurt$Ferm)
-boxplot(Iogurt$strep ~ Iogurt$Ferm)
+boxplot(Iogurt$pH ~ Iogurt$Ferm, 
+        main="pH ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature", 
+        ylab="pH")
+boxplot(Iogurt$lactob ~ Iogurt$Ferm, 
+        main="Lactobacillus ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature",
+        ylab="Lactobacillus concentration")
+boxplot(Iogurt$strep ~ Iogurt$Ferm, 
+         main="Streptococus ~ Fermentation Temp.", 
+        xlab="Fermentation Temperature",
+        ylab="Streptococus concentration")
 ```
 
-Now that we have removed the outliers, let's take a look at the plot of the different response variables with the explanatory variable `dia` in the x axe. Also, we will use the `Ferm` variable to see which individials belong to one group or the other. 
+Now that we have removed the outliers, let's take a look at the plot of the different response variables with the explanatory variable `dia` in the x axis . Also, we will use the `Ferm` variable to see which individials belong to one group or the other. 
 
-```{r}
-#ggplot2.scatterplot(data=Iogurt, xName='dia', yName='strep', groupName="Ferm", addRegLine=TRUE, regLineColor="blue")
-#qplot(dia, strep, data=Iogurt, shape = Ferm)
-
-ggplot(Iogurt, aes(x=dia, y=pH, color=Ferm)) + geom_point(shape=1) +
+```{r  out.width="300px", out.height="300px", fig.align="center"}
+ggplot(Iogurt, aes(x=dia, y=pH, color=Ferm)) + 
+    geom_point(shape=factor(Iogurt$Ferm), size = 2, stroke = 1.3) +
+    ggtitle("pH ~ dia")+
     scale_colour_hue(l=50) + 
     geom_smooth(method=lm,   
                 se=FALSE,    
                 fullrange=TRUE) 
 
-ggplot(Iogurt, aes(x=dia, y=strep, color=Ferm)) + geom_point(shape=1) +
+```
+From this plot we can see that for dia <= 7, the iogurts on the fermentation group 
+with temperature 42 have always a greater pH than those with a fermentation temperature
+of 43.5 Celsius degrees .
+
+But while the dia increases, the pH on both groups clearly and steadily decreases 
+and at the 2nd week they are not separated anymore, for we can see that the two fermentation
+groups are mixed on the pH axis.
+```{r  out.width="300px", out.height="300px", fig.align="center"}
+ggplot(Iogurt, aes(x=dia, y=strep, color=Ferm)) + 
+    geom_point(shape=factor(Iogurt$Ferm), size = 2, stroke = 1.3) +
+    ggtitle("strep ~ dia")+
     scale_colour_hue(l=50) + 
     geom_smooth(method=lm,   
                 se=FALSE,    
                 fullrange=TRUE)
+```
+When comparing the strep bacteria presence on each week, we can see that
+its presence is higher on the first day but it kind of stabilizes on the 7th day
+and decreases slightly over every week, so if we imagine a visual slope, it would not be
+a slope with a great value.
 
-ggplot(Iogurt, aes(x=dia, y=lactob, color=Ferm)) + geom_point(shape=1) +
+On the first day, generally speaking the strep is higher when the fermentation 
+temperature is lower.
+
+After the 7th day, the  strep slightly decreases as we have said, but more importantly
+the variance on those iogurts with a fermentation temperature of 42 is way greater 
+than the one of temperature 43.5, since they are more scattered along the Y axis,
+ranging from a ~740 units of strep to 700, whereas the range of the group of temperature
+43.5 ranges from ~735 to ~710.
+
+```{r  out.width="300px", out.height="300px", fig.align="center"}
+ggplot(Iogurt, aes(x=dia, y=lactob, color=Ferm)) + 
+    geom_point(shape=factor(Iogurt$Ferm), size = 2, stroke = 1.3) +
+    ggtitle("lactob ~ dia")+
     scale_colour_hue(l=50) + 
     geom_smooth(method=lm,   
                 se=FALSE,    
                 fullrange=TRUE) 
 ```
+Finally, in the case of lactob presence,
+we can see that the 2 groups are clearly distinguished on the zeroeth day, with its presence being
+way greater on the 42Temperature group, arund ~785, than on the group of 43.5 where they are scattered
+around ~770 units.
 
+## Table analysis
+Now we will create a table where we will see the basic descriptive measures for every possible value of day.
 
-
-[interpret Plots a little]
-
-Now we will create a table where we will see the basic descriptive measures for every possible value of day. If we take a look at the variable we can see that it ranges from 0 to 28 but only takes the values 0, 7, 14, 21 and 28.
+If we take a look at the variable dia we can see that it ranges from 0 to 28 but only takes the values 0, 7, 14, 21 and 28, reason for
+why we have chosen at the start to deem it as a factor.
 
 ```{r}
 Idf <- as.data.frame(Iogurt)
-
 kable(te <- summaryBy(cbind(pH, lactob, strep)~ dia * Ferm, data = Idf, FUN = c(mean, sd)))
 ```
 
-As we can see in the table we have 10 rows. Each row shows the mean and the standard deviation of the observations from a determined day ---0, 7, 14, 21 or 28--- and type of fermentation ---T42 or T43.5. Since `dia` has 5 possible values and `Ferm` has to we obtain $2\cdot5 = 10$ possible combinations.
+As we can see in the table we have 10 rows. Each row shows the mean and the standard deviation of the observations from a determined day ---0, 7, 14, 21 or 28--- and type of fermentation ---T42 or T43.5, which are our response variables.
 
-[Comentar taula]
+Since `dia` has 5 possible values and `Ferm` has two, we obtain $2\cdot5 = 10$ possible combinations.
 
-#B
+We will focus on each dia and then for each group inside that dia.
+
+### Dia 0
+- Mean on pH is greater for T42.
+- Mean on lactob is greater for T42.
+- Mean on strep H is greater for T42.
+
+- **pH std. dev is greater for T43.5, so it varies more on T43.5.**
+- lactob std. dev is greater for T42.
+- strep std. dev is greater for T42.
+
+## Dia 7
+
+
+## Dia 14
+
+## Dia 21
+
+## Dia 28
+
+
+
+# Part B
 
 Since we can assume that the variable `pH` follows a normal distribution we will proceed to check whether differences exist between the mean of the `pH` values of one group and another. In order to be sure that the variable `dia` doesn't affect us we will take all those values that belong to the day 7. 
 
@@ -174,7 +277,7 @@ var.test(I42_28$strep, I43_28$strep)
 
 As we can see, contrary to the previous t-test, all means are equal except for the day 0 and the variable `strep`, which has a p-value of 0.0387. Also, for both `strep` and `lactob` the ratios of variances are equal to 1.
 
-#C
+#Part C
 
 Let's try to predict the value of the variables `srtep` and `lactob` from the variable `pH`. To do that we will create a linear model for both. This linear model will look like $$strep = \beta_1 \cdot pH + \beta_0 + e$$
 
