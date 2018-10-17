@@ -1,0 +1,221 @@
+---
+title: "Homework 1"
+author: "Sergi Carol"
+date: "October 16, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(doBy)
+```
+## DataSet exploration
+We will begin with an exploration of the dataset, starting with a summary of the data, and converting some of the data types for later use, then we will procede with a more exploratory analysis of the data, using the boxplots to check the mean and the variance of the data as well as check for any outliers.
+```{r}
+Iogurt <- read_delim("Iogurt.csv", 
+                     ";", escape_double = FALSE, trim_ws = TRUE)
+head(Iogurt)
+summary(Iogurt)
+Iogurt$Ferm <- as.factor(Iogurt$Ferm)
+```
+
+From the summary of the data we can gether a few things, it appears that the data is not a range of numbers but instead that there are only days 0, 7, 14, 21, and 28. We can also see how it appears that we have some outliers in __pH__, __Strep__, and __Lactob__, in the following exploratory analysis we will be able to confirm or deny this claim.
+
+```{r}
+par(mfrow=c(1,3))
+boxplot(Iogurt$pH ~ Iogurt$Ferm)
+# We can see how there are clear outliers in our data, in this case we choose to remove them.
+Iogurt <- Iogurt[Iogurt$pH > 100,]
+boxplot(Iogurt$strep ~ Iogurt$Ferm)
+# This also appears to have clear outliers in the data
+Iogurt <- Iogurt[Iogurt$strep > 100,]
+boxplot(Iogurt$lactob ~ Iogurt$Ferm)
+# The same for lactob
+Iogurt <- Iogurt[Iogurt$lactob > 100,]
+```
+
+It appears that indeed there are some outliers, now that we have removed them lets check the boxplots again.
+```{r}
+par(mfrow=c(1,3))
+boxplot(Iogurt$pH ~ Iogurt$Ferm, ylab="pH")
+boxplot(Iogurt$strep ~ Iogurt$Ferm, ylab="Strep")
+boxplot(Iogurt$lactob ~ Iogurt$Ferm, ylab="Lactob")
+```
+
+This is a much more sensible approach. It seems that the group of fermentation at temperature 43.5º has a lower variance than the other group. Besides this not much else can be said with the boxplot.
+
+From now on we will assume the following: The oroiginal data follows a normal distribution and we have homodesdacity.
+
+# TODO: ADD QUESTIONS
+
+### a)
+
+We will begin by performing a dispersion diagram for each of the response variables as well as the regression line corresponding to each one of the groups.
+```{r}
+plot(x = Iogurt$dia,
+     y = Iogurt$pH,
+     col = Iogurt$Ferm,
+     pch = 16,
+     xlab = "Day",
+     ylab = "pH")
+legend('topright',
+       legend = levels(Iogurt$Ferm),
+       col = 1:2,
+       cex = 1,
+       pch = 16)
+r_line <- lm(pH ~ dia, Iogurt[Iogurt$Ferm == "T42",])
+abline(r_line, col=1)
+r_line <- lm(pH ~ dia, Iogurt[Iogurt$Ferm == "T43.5",])
+abline(r_line, col=2)
+```
+
+From the _pH_ we can clearly see how the group ith the higher temperature will start with a higher __pH__ value than the lower temperature, yet, it appears that the longer the days go, the closer the two pH groups come together, and in the end even the 43.5º group tends to have a higer value of pH than the 42º group.
+
+```{r}
+
+plot(x = Iogurt$dia,
+     y = Iogurt$strep,
+     col = Iogurt$Ferm,
+     pch = 16,
+     xlab = "Day",
+     ylab = "strep")
+legend('topright',
+       legend = levels(Iogurt$Ferm),
+       col = 1:2,
+       cex = 1,
+       pch = 16)
+r_line <- lm(strep ~ dia, Iogurt[Iogurt$Ferm == "T42",])
+abline(r_line, col=1)
+r_line <- lm(strep ~ dia, Iogurt[Iogurt$Ferm == "T43.5",])
+abline(r_line, col=2)
+```
+
+Here we see something similar as the _pH_ plot, the 43.5º group starts with a lower value but ends with a higher one, since its quite similar to the pH one we might say that there is some liniarity between the two response variables.
+
+```{r}
+plot(x = Iogurt$dia,
+     y = Iogurt$lactob,
+     col = Iogurt$Ferm,
+     pch = 16,
+     xlab = "Day",
+     ylab = "lactob")
+legend('topright',
+       legend = levels(Iogurt$Ferm),
+       col = 1:2,
+       cex = 1,
+       pch = 16)
+r_line <- lm(lactob ~ dia, Iogurt[Iogurt$Ferm == "T42",])
+abline(r_line, col=1)
+r_line <- lm(lactob ~ dia, Iogurt[Iogurt$Ferm == "T43.5",])
+abline(r_line, col=2)
+```
+
+Once again we see something similar. Over all it does appear that the group 43.5º starts with lower values than, but in the end it effects the iogurts with retaning a higher value of pH, strep and lactob.
+
+#### Summary of the data
+```{r}
+Idf <- as.data.frame(Iogurt)
+(te<-summaryBy(cbind(pH, lactob, strep)~dia * Ferm,data=Idf,FUN= c(mean,sd)))
+```
+
+### b)
+
+In order to check if they have the same mean and the same variance we will perform two types of test, the _t-test_ to determine of two groups have the same mean, and the _F-test_ two compare two variances. It is important to note that we are assuming normality in the data.
+
+```{r}
+g1 <- Iogurt[Iogurt$Ferm == "T42",]
+g1_7 <- g1[g1$dia == 7,]
+g1_14 <- g1[g1$dia == 14,]
+g1_28 <- g1[g1$dia == 28,]
+
+g2 <- Iogurt[Iogurt$Ferm == "T43.5",]
+g2_7 <- g2[g2$dia == 7,]
+g2_14 <- g2[g2$dia == 14,]
+g2_28 <- g2[g2$dia == 28,]
+
+# Use T student p-value > 0.005 means similar
+t.test(g1_7$pH, g2_7$pH)
+var.test(g1_7$pH, g2_7$pH) # Greater than 0.005 same variance
+```
+The two groups have differnet means,  yet their variance is similar.
+```{r}
+t.test(g1_7$strep, g2_7$strep)
+var.test(g1_7$strep, g2_7$strep)
+
+t.test(g1_7$lactob, g2_7$lactob)
+var.test(g1_7$lactob, g2_7$lactob)
+```
+In both casees it appears that on day 7 the groups have similar means and similar variance. Now lets also check this for day 14 and 28.
+```{r}
+t.test(g1_14$pH, g2_14$pH)
+var.test(g1_14$pH, g2_14$pH)
+t.test(g1_14$strep, g2_14$strep)
+var.test(g1_14$strep, g2_14$strep)
+t.test(g1_14$lactob, g2_14$lactob)
+var.test(g1_14$lactob, g2_14$lactob)
+```
+For day 14 all groups share similar means and similar variance. Lastly we will do it again but for day 28.
+```{r}
+t.test(g1_28$pH, g2_28$pH)
+var.test(g1_28$pH, g2_28$pH)
+t.test(g1_28$strep, g2_28$strep)
+var.test(g1_28$strep, g2_28$strep)
+t.test(g1_28$lactob, g2_28$lactob)
+var.test(g1_28$lactob, g2_28$lactob)
+```
+As with the day 14, all means and variances are similar. Thus we could conclude that there is not a big difference between the means, beside on day 0, which according to the initial plotting of the data make sense, since the big disparity in the regression line was only on day 0, and after that the two groups started getting closer together.
+
+### c)
+
+We will begin with trying to formulate and expression for the _strep_ response variable. The easier way to create it is using the _pH_ variable alone. 
+$$strp = \beta * pH + e $$
+I have also tried to add the ferm and the day variables into the expression but they ended up becoming not relevant for the final result, thus our final model will be as follows:
+```{r}
+m1 <- lm(strep ~ pH, Iogurt)
+summary(m1)
+# We can also look at this visually
+plot(Iogurt$pH, Iogurt$strep, col = Iogurt$Ferm)
+abline(m1)
+```
+Our final expression will then be:
+$$Strep = 219.998 + 1.24 * pH$$
+Which we can use to calculate the minimum value of _strep_ so the iogurts have not expired (pH > 4).
+```{r}
+strep_calc <- function(pH){
+  Strep = 219.998 + 1.24* pH
+  return(Strep)
+}
+strep_calc(4)
+```
+
+Now we will do the same for _lactob_
+
+```{r}
+
+m2 <- lm(lactob ~ pH, Iogurt)
+summary(m2)
+# We can also look at this visually
+plot(Iogurt$pH, Iogurt$lactob, col = Iogurt$Ferm)
+abline(m2)
+
+lactob_calc <- function(pH){
+  Lactob = 375.56481 + 0.90829* pH
+  return(Lactob)
+}
+lactob_calc(4)
+```
+
+Finally we can compare the two models and decide which one is better. It appears that the lactob model is better, since it has a lowe range of residuals (-10 to +10).as well as a lower value of standar error and a higher value of R-squared, all symthomps of a better model.
+
+#Conclusions
+
+From this work we can arrive at a few conclusions, the first being that the temperature at which the iogurts are fermented is not of much relevancy in the long run, and it only effects the first few days of fermentation by having the iogurts at a lower temperature have a bigger _pH_ value, yet, all the other observations from differents days provide no significant difference between the two groups of yogurts when messuring the _pH_, _strep_ and _lactob_, yet all the values seem to work on similar ranges independently of the fermentation temperature.
+
+
+What is also relevant is the correlation between the _ph_ attribute and the _strep_ and _lactob_ attributes, since we can predicts one from the other quite precisaly, it is also worth noting that in order to predicts this response variables from the _pH_ the groups the iogurts come from is not relevant at all.
+
+Worth noting are also the values in which a iogurt is considered to be expired, with this values we are able to distinguish them easily, and as we have calculated in this report the values are 225 for _strep_ and 379 for _lactob_.
+
