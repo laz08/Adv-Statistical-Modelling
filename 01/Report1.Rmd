@@ -317,7 +317,17 @@ summary(model_strep)
 
 According to the linear model the expression that best predicts the value of `strep` in term of `pH` is: 
 $$strep = 1.244 \cdot pH + 219.99 $$
-If we look at the adjusted $R^2$ we can see that the data points fit quite well the regression line. We know that if the pH of a yoghurt is lower than 4 that yoghurt is expired. If we wanted to know what the minimum value that `strep` has to have to consider a yoghurt expired we just need to substitute `pH` in the formula for 4. 
+If we look at the adjusted $R^2$ we can see that the data points fit quite well the regression line. 
+
+Let's see it visually:
+```{r}
+plot(Iogurt$pH, Iogurt$strep, col = Iogurt$Ferm, xlab = "pH",
+ylab = "strep")
+abline(model_strep)
+```
+
+
+We know that if the pH of a yoghurt is lower than 4 that yoghurt is expired. If we wanted to know what the minimum value that `strep` has to have to consider a yoghurt expired we just need to substitute `pH` in the formula for 4. 
 
 $$strep = 1.244 \cdot 4 + 219.99 = 224.966$$
 
@@ -333,12 +343,33 @@ This linear model looks like the following:
 
 $$lactob = 0.908 \cdot pH + 375.56$$
 
+And visually:
+```{r}
+plot(Iogurt$pH, Iogurt$lactob, col = Iogurt$Ferm, xlab = "pH",
+ylab = "lactob")
+abline(model_lactob)
+```
+
 If we do the same as before to calculate the minimum `lactob` value for an expired yoghurt we just need to plug 4 into `pH`. 
 
 $$lactob = 0.908 \cdot 4 + 375.56 = 379.19$$
 
 ## Most accurate model
 
-In our opinion, the most accurate model is the one predicting the lactob value, for its adjusted $R^2$ is greater with a value of  0.8844 than the one pedicting the strep variable, which has a adjusted $R^2$  of 0.862.
+In our opinion, the most accurate model is the one predicting the lactob value, for its adjusted $R^2$ is greater with a value of  0.8844 than the one pedicting the strep variable, which has a adjusted $R^2$  of 0.862. It also has a lower range of residuals of around +-10, whereas the other has a range from -13 to +16.
 
 # Conclusions
+
+Now that we have overviewed the data, we can conclude many things:
+
+- There were some outliers that we needed to remove from the observations.
+- The pH is slightly lower overall in the T42 group.
+- The lactob is slightly lower overall in the T42 group.
+- The pH is slightly higher overall in the T42 group.
+
+- The fermentation Temperature has a slight impact on the pH. The more temperature the lower the pH value.
+- The pH is greater on the T42 group but after the 7th day this differentiation disappears.
+- There are not many differences between the two groups of iogurts in general, as seen in the exhaustive table analysis. Sometimes the mean values reversed from the previous days, but the differences were not very big so we cannot say that they are very differentiated.
+- With the F-Test we have rejected the null hypothesis stating that the difference in means between groups T42 and T43.5 is 0. So, we accept the hypothesis that they have a different mean.
+- There seems to be a linear correlation between the pH and the strep and lactob presence in the iogurts, thus being able to create a linear model and predict values.
+- There is not a great differenciation between the strep and lactob presence depending on the temperature, so they don't have much impact on the linear model predictions.
