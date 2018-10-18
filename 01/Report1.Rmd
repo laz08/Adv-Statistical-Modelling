@@ -190,20 +190,49 @@ We will focus on each dia and then for each group inside that dia.
 ### Dia 0
 - Mean on pH is greater for T42.
 - Mean on lactob is greater for T42.
-- Mean on strep H is greater for T42.
+- Mean on strep is greater for T42.
 
 - **pH std. dev is greater for T43.5, so it varies more on T43.5.**
 - lactob std. dev is greater for T42.
 - strep std. dev is greater for T42.
 
 ## Dia 7
+- Mean on pH is greater for T42.
+- Mean on lactob is greater for T42.
+- Mean on strep is greater for T42.
+
+- **pH std. dev is greater for T43.5, so it varies more on T43.5.**
+- lactob std. dev is greater for T42.
+- **strep std. dev is greater for T43.5**.
 
 
 ## Dia 14
+- Mean on pH is greater for T42, but they are **very** close.
+- Mean on lactob is greater for T42, but again, they are very close.
+- Mean on strep is greater for T42.
+
+- **pH std. dev is greater for T43.5, so it varies more on T43.5.**
+- lactob std. dev is greater for T42.
+- strep std. dev is greater for T42.
 
 ## Dia 21
+- **Mean on pH is greater for T43.5, so it has reversed from other days**.
+- **Mean on lactob is greater for T43.5, but only for 0.2. So we can deem them almost the same.**
+- **Mean on strep is greater for T43.5, so it has reversed**.
+
+- pH std. dev is greater for T43.5, as before.
+- **lactob std. dev is greater for T43.5, so it has reversed.**
+- strep std. dev is greater for T42, as before.
+
 
 ## Dia 28
+- Mean on pH is greater for T42.
+- Mean on lactob is greater for T42.
+- Mean on strep  is almost the same.
+
+- **pH std. dev is greater for T42, so it has reversed.**
+- lactob std. dev is greater for T42.
+- strep std. dev is greater for T42.
 
 
 
@@ -277,9 +306,9 @@ var.test(I42_28$strep, I43_28$strep)
 
 As we can see, contrary to the previous t-test, all means are equal except for the day 0 and the variable `strep`, which has a p-value of 0.0387. Also, for both `strep` and `lactob` the ratios of variances are equal to 1.
 
-#Part C
+# Part C
 
-Let's try to predict the value of the variables `srtep` and `lactob` from the variable `pH`. To do that we will create a linear model for both. This linear model will look like $$strep = \beta_1 \cdot pH + \beta_0 + e$$
+Let's try to predict the value of the variables `strep` and `lactob` from the variable `pH`. To do that we will create a linear model for both. This linear model will look like: $$strep = \beta_1 \cdot pH + \beta_0 + e$$
 
 ```{r}
 model_strep <- lm(strep ~ pH, Iogurt)
@@ -308,5 +337,8 @@ If we do the same as before to calculate the minimum `lactob` value for an expir
 
 $$lactob = 0.908 \cdot 4 + 375.56 = 379.19$$
 
-[Most accurate Model???]
-[Conclusions]
+## Most accurate model
+
+In our opinion, the most accurate model is the one predicting the lactob value, for its adjusted $R^2$ is greater with a value of  0.8844 than the one pedicting the strep variable, which has a adjusted $R^2$  of 0.862.
+
+# Conclusions
