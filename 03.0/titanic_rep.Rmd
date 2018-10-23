@@ -1,0 +1,263 @@
+---
+title: "Titanic_Survival"
+author: "Laura Cebollero"
+date: "22/10/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+requiredPackages <- c("ggplot2", "readr", "knitr", "car", "doBy")
+for (pac in requiredPackages) {
+    if(!require(pac,  character.only=TRUE)){
+        install.packages(pac, repos="http://cran.rstudio.com")
+        library(pac,  character.only=TRUE)
+    } 
+}
+rm(pac)
+rm(requiredPackages)
+
+# Set WD and load data
+wd = getwd()
+if(grepl("nora", wd)) {
+    setwd("~/Documents/18-19/ASM/HW/03.0")
+} 
+rm(wd)
+```
+
+# Dataset description
+We first load the data and check it:
+```{r data_load}
+nrow(TitanicSurvival)
+kable(summary(TitanicSurvival))
+```
+
+There are 4 variables:
+
+- Survived: Boolean. Whether the passenger survived or not.
+- Sex: Categorical. 2 categories. The gender of the passenger.
+- Age: Numerical. The age of the passenger.
+- PassengerClass: Categorical. 3 categories. The ticket class of the passenger.
+
+
+
+
+# Exploratory data analysis
+
+263 observations that have missing age. We remove these obs. because we are interested 
+in using age onwards.
+```{r}
+df = as.data.frame(TitanicSurvival)
+
+# Tables
+# Of NA ONLY!!! To see where are more NAs
+df2 = df[is.na(df$age), ]
+table(df2$sex)
+table(df2$passengerClass)
+table(df2$passengerClass, df2$sex)
+t(prop.table(table(df2$passengerClass, df2$sex)))
+
+# We could remove them, but we do not want to. Better to impute.
+# df = df[!is.na(df$age), ]
+# 
+# We impute with the avg. cell of each cell.
+kable(aggregate(age ~ sex + passengerClass, data = df[!is.na(df), ], FUN = mean))
+res = (aggregate(age ~ sex + passengerClass, data = df[!is.na(df), ], FUN = mean))
+res = as.data.frame(res)
+res
+for (x in seq(1, length(res$age))) {
+    r = res[x, ]
+    for(j in seq(1, length(df$age))){
+        row = df[j, ]
+        if(is.na(row$age) & row$sex == r$sex & row$passengerClass == r$passengerClass){
+            df[j, 'age'] <- r$age
+        }
+    }
+}
+
+```
+
+
+We want our response variable to be whether a passenger survived or not depending
+on the variables sex, age and passengerClass. And what about their interaction?
+
+
+# Model definition & analysis
+
+## Model 1
+```{r}
+model1 <- glm(survived ~ sex + passengerClass + age, data = df, family=binomial)
+deviance(model1)
+AIC(model1)
+sum(residuals(model1, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model1, type = "pearson")^2)/(nrow(df) - 5)   # X^2/(N-P)
+# Close to 1. Empirical dispersion. We are doing well assuming a binomial distribution with dispersion param 1.
+# 
+# Remember:
+# AIC = -2l + 2p ;;; Where p = num of parameters
+# AIC useful to penalize models with large number of parameters
+
+# With AIC we cannnot perform an Hypothesis test.
+# To compare, we can use X^2 (chi square)
+```
+
+
+```{r}
+model1 <- glm(survived ~ sex + passengerClass + age, data = df, family=binomial)
+deviance(model1)
+AIC(model1)
+# p = 5
+sum(residuals(model1, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model1, type = "pearson")^2)/(nrow(df) - 5)   # X^2/(N-P)
+# Close to 1. Empirical dispersion. We are doing well assuming a binomial distribution with dispersion param 1.
+# 
+# Remember:
+# AIC = -2l + 2p ;;; Where p = num of parameters
+# AIC useful to penalize models with large number of parameters
+
+# With AIC we cannnot perform an Hypothesis test.
+# To compare, we can use X^2 (chi square)
+```
+
+```{r}
+summary(model1)
+```
+All variables are significant (***).
+Female taken as baseline. -2.46 for male.
+
+If we have a man with:
+
+- same age as a woman
+- same class
+
+THEN it has a lower prob. to survive than the woman, for its ODDS ratio = $e^{-2.46}$
+
+```{r}
+Anova(model1)
+Anova(model1, ty=3)
+```
+
+There is no interaction. Type 2 and Type 3 result in the same in the tests.
+
+Tests globally to check if the variables are significant in the model.
+
+
+## Model 2
+Let us put more interactions.
+
+Let's see if the 2 categorical values interact:
+```{r}
+model2 <- glm(survived ~ (sex * passengerClass) + age, data = df, family=binomial)
+
+summary(model2)
+# p = 7. AIC penalizes this!!!
+
+deviance(model2)
+AIC(model2)
+sum(residuals(model2, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model2, type = "pearson")^2)/(nrow(df) - length(model2$coefficients))   # X^2/(N-P)
+```
+Based that the AIC is lower although it penalizes the num of parameters, we choose this model because it supposedly 
+fits more.
+
+Since Model1 is nested in model2, we can compare the deviances:
+```{r}
+AIC(model1) - AIC(model2)
+```
+
+With 2 degrees of freedom.
+Which is larger than $\chi^2_{0.05,  2}$.
+```{r}
+qchisq(0.95, 1)
+```
+
+So we reject the null hypothesis and we prefer model2 instead of model1.
+
+## Model 3
+```{r}
+model3 <- glm(survived ~ (sex * passengerClass) + (age * sex), data = df, family=binomial)
+
+summary(model3)
+# p = 7. AIC penalizes this!!!
+
+deviance(model3)
+AIC(model3)
+sum(residuals(model3, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model3, type = "pearson")^2)/(nrow(df) - length(model3$coefficients))   # X^2/(N-P)
+```
+
+
+To check that the age*sex is significant:
+```{r}
+Anova(model3, ty=3)
+```
+
+It is!
+
+**Model3 seems better than model2!**
+
+## Model 4
+```{r}
+model4 <- glm(survived ~ (sex * passengerClass)  + (age * passengerClass), data = df, family=binomial)
+
+summary(model4)
+# p = 7. AIC penalizes this!!!
+
+deviance(model4)
+AIC(model4)
+sum(residuals(model4, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model4, type = "pearson")^2)/(nrow(df) - length(model4$coefficients))   # X^2/(N-P)
+```
+
+
+Based on the deviance, we may reject model2 for the diff is greater the Chisq:
+```{r}
+AIC(model2) - AIC(model4) 
+qchisq(0.95, 2)
+
+AIC(model2) - AIC(model4)  > qchisq(0.95, 2)
+```
+
+**For now, model3 is still the winner.**
+
+## Model 5
+```{r}
+model5 <- glm(survived ~ (sex * passengerClass) + (age * sex) + (age * passengerClass), data = df, family=binomial)
+
+summary(model5)
+# p = 7. AIC penalizes this!!!
+
+deviance(model5)
+AIC(model5)
+sum(residuals(model5, type = "pearson")^2)  # Pearson test. X^2
+sum(residuals(model5, type = "pearson")^2)/(nrow(df)  - length(model5$coefficients))   # X^2/(N-P)
+```
+
+
+**The final model is model3**.
+
+
+```{r}
+Anova(model3, ty =3) # To see that everything is significant
+plot(model3)
+```
+
+TODO:
+There are clearly 2 lines. One for people that have survived and one for
+those that have not survived.
+
+Interpret this first plot.
+
+Plot the predicted values and plot the probabilities of model3 as function
+of the age variable, as our response variable.
+
+Use diff. color for the (2 * 3 =) 6 diff profiles.
+
+Take conclusions for this plot.
+
+$predict_i = log(frac{p_{i}}{1 - p_i})$ 
+
+```{r}
+
+```
