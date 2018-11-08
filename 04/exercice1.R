@@ -23,10 +23,11 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
     lambda <- lambda.v[l]
     r <- dim(Xval)[1]
     PMSE.VAL[l] <- 0
+    # Compute beta with the traning dataset
     beta.i <- solve(t(X)%*%X + lambda*diag(1,p)) %*% t(X) %*% Y
     for (i in 1:r){
       m.Y.i <- 0# wut
-      
+      # Compute the errors with the validation dataset
       Xi <- Xval[i,]; Yi <- Yval[i]
       hat.Yi <- Xi %*% beta.i + m.Y.i
       PMSE.VAL[l] <-PMSE.VAL[l] + (hat.Yi - Yi)^2
@@ -45,16 +46,21 @@ MSPEkfold <- function(X, Y, K) {
     
     Xk <- as.matrix(X[folds != k,])
     Yk <- as.matrix(Y[folds != k])
-    r <- dim(Xk)[1]
+    Xval <- as.matrix(X[folds == k,])
+    Yval <- as.matrix(Y[folds == k])
+
+    r <- dim(Xval)[1]
     for (l in 1:n.lambdas){
       lambda <- lambda.v[l]
       PMSE.CV[l] <- 0
+      # Compute Beta with the elements in the folds
       beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% t(Xk) %*% Yk
       for (i in 1:r){
         #   m.Y.i <- mean(Y[-i])
         m.Y.i <- 0
-        Xi <- Xk[i,]; Yi <- Y[i]
-        hat.Yi <- Xi %*% beta.i
+        # Compute the error with the remaning elements
+        Xi <- Xval[i,]; Yi <- Yval[i]
+        hat.Yi <- Xi %*% beta.i + m.Y.i
         PMSE.CV[l] <- PMSE.CV[l] + (hat.Yi-Yi)^2 # Maybe not here
       }
       PMSE.CV[l] <- PMSE.CV[l]/n
@@ -63,4 +69,6 @@ MSPEkfold <- function(X, Y, K) {
   return(PMSE.CV)
 }
 
-MSPEkfold(X, Y, 10)
+mpse.10 <- MSPEkfold(X, Y, 10)
+
+mpse.5 <- MSPEkfold(X, Y, 5)
