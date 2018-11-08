@@ -13,20 +13,17 @@ lambda.max <- 1e5
 n.lambdas <- 25
 lambda.v <- exp(seq(0,log(lambda.max+1),length=n.lambdas))-1
 
-t <- n * 0.8
-Xt <- X[1:t,]
-Yt <- Y[1:t,]
-Xval <- X[t:n,]
-Yval <- Y[t:n,]
+Xval <- scale(as.matrix(prostate[-use.only, 1:8]),  center=TRUE, scale=TRUE)
+Yval <- scale(prostate$lpsa[-use.only], center=TRUE, scale=FALSE)
 
 # I think its done
-MSPEval <- function(Xt, yt, Xval, Yval, lambda.v) {
+MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
   PMSE.VAL <- numeric(n.lambdas)
   for (l in 1:n.lambdas){
     lambda <- lambda.v[l]
     r <- dim(Xval)[1]
     PMSE.VAL[l] <- 0
-    beta.i <- solve(t(Xt)%*%Xt + lambda*diag(1,p)) %*% t(Xt) %*% Yt
+    beta.i <- solve(t(X)%*%X + lambda*diag(1,p)) %*% t(X) %*% Y
     for (i in 1:r){
       m.Y.i <- 0# wut
       
@@ -38,7 +35,7 @@ MSPEval <- function(Xt, yt, Xval, Yval, lambda.v) {
   }
   return(PMSE.VAL)
 }
-MSPEval(Xt, Yt, Xval, Yval, lambda.v)
+MSPEval(X, Y, Xval, Yval, lambda.v)
 
 # Revisar
 MSPEkfold <- function(X, y, K) {
