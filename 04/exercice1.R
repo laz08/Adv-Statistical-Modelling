@@ -28,7 +28,7 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
     for (i in 1:r){
       # Compute the errors with the validation dataset
       Xi <- Xval[i,]; Yi <- Yval[i]
-      hat.Yi <- Xi %*% beta.i 
+      hat.Yi <- Xi %*% beta.i
       PMSE.VAL[l] <-PMSE.VAL[l] + (hat.Yi - Yi)^2
     }
     PMSE.VAL[l] <- PMSE.VAL[l]/r
@@ -45,10 +45,10 @@ MSPEkfold <- function(X, Y, K) {
     
     Xk <- as.matrix(X[folds != k,])
     Yk <- as.matrix(Y[folds != k])
-    Xval <- as.matrix(X[folds == k,])
-    Yval <- as.matrix(Y[folds == k])
+    Xv <- as.matrix(X[folds == k,])
+    Yv <- as.matrix(Y[folds == k])
 
-    r <- dim(Xval)[1]
+    r <- dim(Xv)[1]
     for (l in 1:n.lambdas){
       lambda <- lambda.v[l]
       PMSE.CV[l] <- 0
@@ -58,7 +58,7 @@ MSPEkfold <- function(X, Y, K) {
         #   m.Y.i <- mean(Y[-i])
         m.Y.i <- 0
         # Compute the error with the remaning elements
-        Xi <- Xval[i,]; Yi <- Yval[i]
+        Xi <- Xv[i,]; Yi <- Yv[i]
         hat.Yi <- Xi %*% beta.i + m.Y.i
         PMSE.CV[l] <- PMSE.CV[l] + (hat.Yi-Yi)^2 # Maybe not here
       }
