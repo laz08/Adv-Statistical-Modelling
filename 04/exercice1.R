@@ -26,13 +26,12 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
     # Compute beta with the traning dataset
     beta.i <- solve(t(X)%*%X + lambda*diag(1,p)) %*% t(X) %*% Y
     for (i in 1:r){
-      m.Y.i <- 0# wut
       # Compute the errors with the validation dataset
       Xi <- Xval[i,]; Yi <- Yval[i]
-      hat.Yi <- Xi %*% beta.i + m.Y.i
+      hat.Yi <- Xi %*% beta.i 
       PMSE.VAL[l] <-PMSE.VAL[l] + (hat.Yi - Yi)^2
     }
-    PMSE.VAL[l] <- PMSE.VAL[l]/n
+    PMSE.VAL[l] <- PMSE.VAL[l]/r
   }
   return(PMSE.VAL)
 }
@@ -63,7 +62,7 @@ MSPEkfold <- function(X, Y, K) {
         hat.Yi <- Xi %*% beta.i + m.Y.i
         PMSE.CV[l] <- PMSE.CV[l] + (hat.Yi-Yi)^2 # Maybe not here
       }
-      PMSE.CV[l] <- PMSE.CV[l]/n
+      PMSE.CV[l] <- PMSE.CV[l]/r
     }
   }
   return(PMSE.CV)
