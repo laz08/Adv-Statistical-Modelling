@@ -38,28 +38,29 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
 MSPEval(X, Y, Xval, Yval, lambda.v)
 
 # Revisar
-MSPEkfold <- function(X, y, K) {
+MSPEkfold <- function(X, Y, K) {
   PMSE.CV <- numeric(n.lambdas)
   folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
   for (k in 1:K){
     
     Xk <- as.matrix(X[folds != k,])
-    Yk <- Y[folds != k]
+    Yk <- as.matrix(Y[folds != k])
+    r <- dim(Xk)[1]
     for (l in 1:n.lambdas){
       lambda <- lambda.v[l]
       PMSE.CV[l] <- 0
-      for (i in 1:length(Xk)){
+      beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% t(Xk) %*% Yk
+      for (i in 1:r){
         #   m.Y.i <- mean(Y[-i])
         m.Y.i <- 0
         Xi <- Xk[i,]; Yi <- Y[i]
-        beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% Yk
         hat.Yi <- Xi %*% beta.i
         PMSE.CV[l] <- PMSE.CV[l] + (hat.Yi-Yi)^2 # Maybe not here
       }
       PMSE.CV[l] <- PMSE.CV[l]/n
     }
   }
+  return(PMSE.CV)
 }
 
-MSPEval(Xt, Yt, Xval, Yval, lambda.v)
-#MSPEkfold(X, Y, 10)
+MSPEkfold(X, Y, 10)
