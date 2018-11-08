@@ -13,25 +13,34 @@ lambda.max <- 1e5
 n.lambdas <- 25
 lambda.v <- exp(seq(0,log(lambda.max+1),length=n.lambdas))-1
 
-MSPEval <- function(X, y, Xval, Yval, lambda.v) {
-  n.lambda <- length(lambda.v)
-  for (l in 1:n.lambda){
-    n <- length(Xval)
+t <- n * 0.8
+Xt <- X[1:t,]
+Yt <- Y[1:t,]
+Xval <- X[t:n,]
+Yval <- Y[t:n,]
+
+# I think its done
+MSPEval <- function(Xt, yt, Xval, Yval, lambda.v) {
+  PMSE.VAL <- numeric(n.lambdas)
+  for (l in 1:n.lambdas){
+    lambda <- lambda.v[l]
+    r <- dim(Xval)[1]
     PMSE.VAL[l] <- 0
-    for (i in 1:n){
-      m.Y.i <- # wut
-
+    beta.i <- solve(t(Xt)%*%Xt + lambda*diag(1,p)) %*% t(Xt) %*% Yt
+    for (i in 1:r){
+      m.Y.i <- 0# wut
+      
       Xi <- Xval[i,]; Yi <- Yval[i]
-      beta.i <- solve(t(Xval)%*%Xval + lambda*diag(1,p)) %*% t(Xval) %*% Yval
       hat.Yi <- Xi %*% beta.i + m.Y.i
-      PMSE.VAL[l] <-PMSE[l] + (hat.Yi - Yi)^2
+      PMSE.VAL[l] <-PMSE.VAL[l] + (hat.Yi - Yi)^2
     }
-    PMSE.VAL[l] <- PMSE[l]/n
+    PMSE.VAL[l] <- PMSE.VAL[l]/n
   }
-  
+  return(PMSE.VAL)
 }
+MSPEval(Xt, Yt, Xval, Yval, lambda.v)
 
-
+# Revisar
 MSPEkfold <- function(X, y, K) {
   PMSE.CV <- numeric(n.lambdas)
   folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
@@ -55,4 +64,5 @@ MSPEkfold <- function(X, y, K) {
   }
 }
 
-MSPEkfold(X, Y, 10)
+MSPEval(Xt, Yt, Xval, Yval, lambda.v)
+#MSPEkfold(X, Y, 10)
