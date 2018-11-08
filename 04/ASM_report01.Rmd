@@ -1,0 +1,84 @@
+---
+title: "ASM - Ridge Regression"
+author: "Sergi Carol, Laura Cebollero, Alex Rodriguez"
+date: "8th November, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("parameter_lambda.R")
+```
+
+# Choosing the penalization parameter
+As asked, we have written two functions to choose an adequate parameter $\lambda$ 
+for the Ridge Regression.
+
+The implementation of such functions can be found at `parameter_lambda.R` with
+its corresponent comments inline to understand how the code works.
+
+We use 25 different $\lambda$ that range from 0 to 100.000.
+
+## Choosing $\lambda$ with MPSE and a validations set
+The first function implemented is the one that allows us to choose $\lambda$ using a validation set.
+
+Such validation set has been selected by using the column `train`, which tells us which
+data can be used for training purposes.
+
+This leaves us with a validation set of 30 observations, and 67 observations as the
+training sample.
+
+Below is the plotting the resulting MSPE values for each lambda:
+
+```{r plot_val, echo=FALSE}
+plot(log(1+lambda.v), MSPE.val)
+abline(v=log(1+lambda.val),col=2,lty=2)
+```
+```{r min}
+(minPos = which.min(MSPE.val))
+lambda.v[minPos]
+```
+We can see that using this method, the $\lambda$ that gives us the least error is 
+the 8th one, with a value of 27.7.
+
+## Choosing $\lambda$ with MPSE and K-fold cross-validation
+
+We have also done the implementation of k-fold cross-validation. 
+
+Using a 10-fold CV, we obtain the following plot:
+
+```{r plotcv10, echo=FALSE}
+plot(log(1+lambda.v), mspe.10)
+abline(v=log(1+lambda.mspe.10),col=2,lty=2)
+```
+
+```{r}
+(minPos = which.min(mspe.10))
+lambda.v[minPos]
+```
+
+It seems that in this case, we are selecting the one with $\lambda = 0$, which means
+we are not penalizing.
+
+
+If we use a 5-fold CV:
+
+```{r plotcv5, echo=FALSE}
+plot(log(1+lambda.v), mspe.5)
+abline(v=log(1+lambda.mspe.5),col=2,lty=2)
+```
+
+```{r}
+(minPos = which.min(mspe.5))
+lambda.v[minPos]
+```
+Now the selected  $\lambda$ with the least error is the one on the 9th position with
+ $\lambda = 45.41$.
+ 
+ 
+ TODO: Compare results with those obtained with leave 1 out and CV.
+ 
+ 
+ 
+ # Ridge Regression for Boston Housing Area
+ TODO

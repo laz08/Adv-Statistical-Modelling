@@ -1,3 +1,14 @@
+
+# Set WD and load data
+wd = getwd()
+if(grepl("nora", wd)) {
+    setwd("~/Documents/18-19/ASM/HW/04")
+} else {
+     ## Put working path for Sergi and Alex
+}
+rm(wd)
+
+######
 prostate <- read.table("prostate_data.txt", header=TRUE, row.names = 1)
 train.sample <- which(prostate$train==TRUE)
 
@@ -18,11 +29,14 @@ Yval <- scale(prostate$lpsa[-use.only], center=TRUE, scale=FALSE)
 
 # I think its done
 MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
-  PMSE.VAL <- numeric(n.lambdas)
+  PMSE.VAL <- n.lambdas
+  
+  # Iterate through candidate values
   for (l in 1:n.lambdas){
     lambda <- lambda.v[l]
     r <- dim(Xval)[1]
     PMSE.VAL[l] <- 0
+    
     # Compute beta with the traning dataset
     beta.i <- solve(t(X)%*%X + lambda*diag(1,p)) %*% t(X) %*% Y
     for (i in 1:r){
@@ -35,14 +49,21 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
   }
   return(PMSE.VAL)
 }
-MSPEval(X, Y, Xval, Yval, lambda.v)
+MSPE.val = MSPEval(X, Y, Xval, Yval, lambda.v)
+lambda.val <- lambda.v[which.min(MSPE.val)]
+
+plot(log(1+lambda.v), MSPE.val)
+abline(v=log(1+lambda.val),col=2,lty=2)
+
+
 
 # Revisar
 MSPEkfold <- function(X, Y, K) {
-  PMSE.CV <- numeric(n.lambdas)
+  PMSE.CV <- n.lambdas
   folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
+  
+  # Iterate through K Folds
   for (k in 1:K){
-    
     Xk <- as.matrix(X[folds != k,])
     Yk <- as.matrix(Y[folds != k])
     Xv <- as.matrix(X[folds == k,])
@@ -68,6 +89,15 @@ MSPEkfold <- function(X, Y, K) {
   return(PMSE.CV)
 }
 
-mpse.10 <- MSPEkfold(X, Y, 10)
+mspe.10 <- MSPEkfold(X, Y, 10)
+lambda.mspe.10 <- lambda.v[which.min(mspe.10)]
 
-mpse.5 <- MSPEkfold(X, Y, 5)
+plot(log(1+lambda.v), mspe.10)
+abline(v=log(1+lambda.mspe.10),col=2,lty=2)
+
+
+mspe.5 <- MSPEkfold(X, Y, 5)
+lambda.mspe.5 <- lambda.v[which.min(mspe.5)]
+
+plot(log(1+lambda.v), mspe.5)
+abline(v=log(1+lambda.mspe.5),col=2,lty=2)
