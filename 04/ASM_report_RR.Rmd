@@ -6,11 +6,11 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 source("parameter_lambda.R")
 ```
 
 ## Some notes 
+
 All the code related to this report and delivery can be found on the files:
 
 - `parameter_lambda.R`. Has the code for the 1st task: choosing the $\lambda$ penalization parameter.
@@ -41,7 +41,7 @@ training sample.
 
 Below is the plotting the resulting MSPE values for each lambda:
 
-```{r plot_val, echo=FALSE}
+```{r plot_val, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
 plot(log(1+lambda.v), MSPE.val)
 abline(v=log(1+lambda.val),col=2,lty=2)
 ```
@@ -58,7 +58,7 @@ We have also done the implementation of k-fold cross-validation.
 
 Using a 10-fold CV, we obtain the following plot:
 
-```{r plotcv10, echo=FALSE}
+```{r plotcv10, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
 plot(log(1+lambda.v), mspe.10)
 abline(v=log(1+lambda.mspe.10),col=2,lty=2)
 ```
@@ -74,7 +74,7 @@ we are not penalizing.
 
 If we use a 5-fold CV:
 
-```{r plotcv5, echo=FALSE}
+```{r plotcv5, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
 plot(log(1+lambda.v), mspe.5)
 abline(v=log(1+lambda.mspe.5),col=2,lty=2)
 ```
@@ -86,12 +86,37 @@ lambda.v[minPos]
 Now the selected  $\lambda$ with the least error is the one on the 9th position with
  $\lambda = 45.41$.
  
+ Let's now proceed onto compare those results with those obtained from using the methods of leave-one-out cross-validation and Generalized Cross-Validation.
  
- TODO: Compare results with those obtained with leave 1 out and CV.
- 
- 
- 
- # Ridge Regression for Boston Housing Area
+```{r}
+mspe.cv <- MSPEcv(X, Y, n.lambdas, lambda.v, n)
+mspe.gcv <- MSPEgcv(X, Y, n.lambdas, lambda.v, beta.path, diag.H.lambda, n)
+```
+
+```{r plotting2, echo=FALSE,  out.width="250px", out.height="250px", fig.align="center"}
+plot(df.v, MSPE.val)
+points(df.v, mspe.cv,col=13,pch=19,cex=.75)
+points(df.v, mspe.5,col=12,pch=19,cex=.75)
+points(df.v, mspe.10,col=8,pch=19,cex=.75)
+points(df.v, mspe.gcv,col=10,pch=19,cex=.5)
+
+legend("topright",
+       c("MSPE.val","MSPE.CV", "MSPE 5-Fold", "MSPE 10-Fold", "MSPE GCV"),
+       pch=c(19, 19, 19, 19, 19),
+       lty=c(0,0,0,0,0),
+       lwd=c(0,0,0,0,0),
+       col=c(9, 13, 12, 8, 10)
+       )
+
+```
+
+
+TODO: Interpret plot
+
+
+\newpage
+
+# Ridge Regression for Boston Housing Area
  Now, we are going to proceed to apply Ridge Regression to the Boston Housing Dataset.
  
  **Please note that we have not found uploaded on `El Racó` the corrected dataset.**
@@ -102,7 +127,35 @@ contains all the 13 explanatory variables. This matrix has been centered and sca
 
 We have then created a vector $Y$ which is the response variable. It has been centered but not scaled.
 
+```{r include=FALSE, echo=FALSE}
+source("boston.R")
+```
 
+```{r plotting, echo=FALSE,  out.width="300px", out.height="300px", fig.align='center'}
+plot(df.v, MSPE.val)
+points(df.v, mspe.cv,col=13,pch=19,cex=.75)
+points(df.v, mspe.5,col=12,pch=19,cex=.75)
+points(df.v, mspe.10,col=8,pch=19,cex=.75)
+points(df.v, mspe.gcv,col=10,pch=19,cex=0.5)
 
+abline(v=df.GCV,col=1,lty=2,lwd=2)
+abline(v=0.001,col=2,lty=2,lwd=1, cex=0.35) # Since df.CV.H.lambda == 0, this is to force the print of this abline
+# abline(v=df.CV.H.lambda + 0.001,col=2,lty=2, lwd=3)
 
+legend("topright",
+       c("MSPE.val","MSPE.CV", "MSPE 5-Fold", "MSPE 10-Fold", "MSPE GCV", "lambda.GCV","lambda.CV"),
+       pch=c(1, 19, 19, 19, 19, NA, NA),
+       lty=c(0,0,0,0,0,2,2),
+       lwd=c(0,0,0,0,0,2,1),
+       col=c(9, 13, 12, 8, 10, 1, 2)
+       )
+
+```
+
+ We can see that we get higher values on the  MSPE 5-Fold, the lowest ones obtained from
+ MSPE val (that using, using an 80% of the data as training and 20% of the original dataset as a validation set).
  
+In this case, the 10-fold method does not prove as a good method for it declines until reaching 0.
+
+The generalized Cross-validation method as well as the leave one out (MSPE.CV) follow close
+the MSPE 5-fold evolution and in fact have a greater value when df.v > 9.

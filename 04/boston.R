@@ -81,13 +81,21 @@ df.CV.H.lambda <- df.v[which.min(mspe.d.h)]
 
 ## Plotting
 plot(df.v, MSPE.val)
-points(df.v, mspe.cv,col=6,pch=19,cex=.75)
-points(df.v, mspe.5,col=7,pch=19,cex=.75)
+points(df.v, mspe.cv,col=13,pch=19,cex=.75)
+points(df.v, mspe.5,col=12,pch=19,cex=.75)
 points(df.v, mspe.10,col=8,pch=19,cex=.75)
-points(df.v, mspe.gcv,col=10,pch=19,cex=.75)
+points(df.v, mspe.gcv,col=10,pch=2,cex=1.5)
 
-abline(v=df.GCV,col=1,lty=2,lwd=3)
-abline(v=df.CV.H.lambda,col=6,lty=6)
-legend("top",c("PMSE.GCV","PMSE.CV","lambda.GCV","lambda.CV"),
-       pch=c(1,19,NA,NA),lty=c(0,0,2,6),lwd=c(0,0,3,1),col=c(1,6,1,6))
+abline(v=df.GCV,col=1,lty=2,lwd=2)
+abline(v=0.001,col=2,lty=2,lwd=1, cex=0.35) # Since df.CV.H.lambda == 0, this is to force the print of this abline
+# abline(v=df.CV.H.lambda + 0.001,col=2,lty=2, lwd=3)
+
+legend("top",
+       c("MSPE.val","MSPE.CV", "MSPE 5-Fold", "MSPE 10-Fold", "MSPE GCV", "lambda.GCV","lambda.CV"),
+       pch=c(2, 19, 19, 19, 2, NA, NA),
+       lty=c(0,0,0,0,0,2,2),
+       lwd=c(0,0,0,0,0,2,1),
+       col=c(9, 13, 12, 8, 10, 1, 2)
+       )
+
 
