@@ -24,34 +24,39 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v, n.lambdas) {
 
 # K fold
 MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
-    PMSE.CV <- n.lambdas
-    folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
+  PMSE.CV <- n.lambdas
+  folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
+  
+  # Iterate through K Folds
+  for (k in 1:K){
+    Xk <- as.matrix(X[folds != k,])
+    Yk <- as.matrix(Y[folds != k])
+    Xv <- as.matrix(X[folds == k,])
+    Yv <- as.matrix(Y[folds == k])
     
-    # Iterate through K Folds
-    for (k in 1:K){
-        Xk <- as.matrix(X[folds != k,])
-        Yk <- as.matrix(Y[folds != k])
-        Xv <- as.matrix(X[folds == k,])
-        Yv <- as.matrix(Y[folds == k])
-        
-        r <- dim(Xv)[1]
-        for (l in 1:n.lambdas){
-            lambda <- lambda.v[l]
-            PMSE.CV[l] <- 0
-            # Compute Beta with the elements in the folds
-            beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% t(Xk) %*% Yk
-            for (i in 1:r){
-                #   m.Y.i <- mean(Y[-i])
-                m.Y.i <- 0
-                # Compute the error with the remaning elements
-                Xi <- Xv[i,]; Yi <- Yv[i]
-                hat.Yi <- Xi %*% beta.i + m.Y.i
-                PMSE.CV[l] <- PMSE.CV[l] + (hat.Yi-Yi)^2 # Maybe not here
-            }
-            PMSE.CV[l] <- PMSE.CV[l]/r
-        }
+    r <- dim(Xv)[1]
+    PMSE <- n.lambdas
+    
+    for (l in 1:n.lambdas){
+      lambda <- lambda.v[l]
+      PMSE[l] <- 0
+      PMSE.CV[l][k] <- 0
+      # Compute Beta with the elements in the folds
+      beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% t(Xk) %*% Yk
+      for (i in 1:r){
+        m.Y.i <- 0
+        # Compute the error with the remaning elements
+        Xi <- Xv[i,]; Yi <- Yv[i]
+        hat.Yi <- Xi %*% beta.i + m.Y.i
+        PMSE[l] <- (PMSE[l] + (hat.Yi-Yi)^2) # Maybe not here
+      }
+      PMSE.CV[l][k] <- PMSE[l]/r 
     }
-    return(PMSE.CV)
+  }
+  for (i in 1:n.lambdas){
+    PMSE.CV[i] <- min(PMSE.CV[i])
+  }
+  return(PMSE.CV)
 }
 
 
