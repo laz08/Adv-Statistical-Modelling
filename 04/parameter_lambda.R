@@ -27,7 +27,7 @@ lambda.v <- exp(seq(0,log(lambda.max+1),length=n.lambdas))-1
 Xval <- scale(as.matrix(prostate[-use.only, 1:8]),  center=TRUE, scale=TRUE)
 Yval <- scale(prostate$lpsa[-use.only], center=TRUE, scale=FALSE)
 
-# I think its done
+
 MSPEval <- function(X, Y, Xval, Yval, lambda.v) {
   PMSE.VAL <- n.lambdas
   
