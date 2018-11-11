@@ -108,7 +108,7 @@ legend("topright",
 
 ```
 
-It is clear how the method of validation is the one that gives the less error for the values of parameters in the effective degrees of freedom. Yet for 
+It is clear how the method of validation is the one that gives the less error for the values of parameters in the effective degrees of freedom. Yet the number of parameters established by the degrees of freedom is different for the validation ridge regression than for the other. In the validation approach the optimal amount of df is __5.88__ while for the other methods it seems that the optimal amount of parameters is __6.79__
 
 \newpage
 
