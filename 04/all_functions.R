@@ -24,7 +24,8 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v, n.lambdas) {
 
 # K fold
 MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
-  PMSE.CV <- n.lambdas
+  PMSE.CV <-matrix(nrow = K, ncol=n.lambdas)
+  n <- dim(X)[1]
   folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
   
   # Iterate through K Folds
@@ -35,12 +36,9 @@ MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
     Yv <- as.matrix(Y[folds == k])
     
     r <- dim(Xv)[1]
-    PMSE <- n.lambdas
-    
     for (l in 1:n.lambdas){
+      PMSE.CV[k,l] <- 0  
       lambda <- lambda.v[l]
-      PMSE[l] <- 0
-      PMSE.CV[l][k] <- 0
       # Compute Beta with the elements in the folds
       beta.i <- solve(t(Xk)%*%Xk + lambda*diag(1,p))  %*% t(Xk) %*% Yk
       for (i in 1:r){
@@ -48,15 +46,17 @@ MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
         # Compute the error with the remaning elements
         Xi <- Xv[i,]; Yi <- Yv[i]
         hat.Yi <- Xi %*% beta.i + m.Y.i
-        PMSE[l] <- (PMSE[l] + (hat.Yi-Yi)^2) # Maybe not here
+        PMSE.CV[k,l] <- (PMSE.CV[k,l] + (hat.Yi-Yi)^2) # Maybe not here
       }
-      PMSE.CV[l][k] <- PMSE[l]/r 
+      PMSE.CV[k,l] <- PMSE.CV[k,l]/r 
     }
+  
+  MPSE <- n.lambdas
   }
-  for (i in 1:n.lambdas){
-    PMSE.CV[i] <- min(PMSE.CV[i])
+    for (i in 1:n.lambdas){
+      MPSE[i] <- min(PMSE.CV[,i])
   }
-  return(PMSE.CV)
+  return(MPSE)
 }
 
 
