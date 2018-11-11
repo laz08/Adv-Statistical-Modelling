@@ -227,6 +227,13 @@ df = rbind(df, list("Generalized C.V.", df.v[which.min(mspe.gcv)], mspe.gcv[whic
 kable(df)
 ```
 
+We can see from both the graphic and the table that the lowest values have been obtained again with the Validation method, with a selected degrees of freedom of 7.13 and a way lower MSPE value with 16.79.
+
+In all the other methods the MSPE value is $$23 \le MSPE \le 24 $$
+
+and the degrees of freedom selected either 12.53 or 12.72.
+
+
  We can see that we get higher values on the  MSPE 5-Fold, the lowest ones obtained from
  MSPE val (that using, using an 80% of the data as training and 20% of the original dataset as a validation set).
  
