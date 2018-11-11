@@ -11,7 +11,7 @@ rm(wd)
 library(MASS)
 data(Boston) # TODO: Check for the Boston Corrected dataset (where to download it?)
 source("all_functions.R")
-
+set.seed(123)
 
 ## Data exploration
 summary(Boston)

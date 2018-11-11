@@ -10,6 +10,7 @@ rm(wd)
 
 ######
 source("all_functions.R")
+set.seed(123)
 ######
 
 prostate <- read.table("prostate_data.txt", header=TRUE, row.names = 1)
