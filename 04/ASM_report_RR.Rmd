@@ -7,6 +7,8 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 source("parameter_lambda.R")
+library("data.table")
+library("knitr")
 ```
 
 ## Some notes 
@@ -20,7 +22,7 @@ All the code related to this report and delivery can be found on the files:
 
 
 
-# Choosing the penalization parameter
+# 1. Choosing the penalization parameter
 
 As asked, we have written two functions to choose an adequate parameter $\lambda$ 
 for the Ridge Regression.
@@ -30,8 +32,8 @@ its corresponent comments inline to understand how the code works.
 
 We use 25 different $\lambda$ that range from 0 to 100.000.
 
-## Choosing $\lambda$ with MPSE and a validations set
-The first function implemented is the one that allows us to choose $\lambda$ using a validation set.
+## 1.1. Choosing $\lambda$ with MPSE and a validations set
+The first function implemented is the one that allows us to choose $\lambda$ using a validation set and a training set.
 
 Such validation set has been selected by using the column `train`, which tells us which
 data can be used for training purposes.
@@ -52,10 +54,13 @@ lambda.v[minPos]
 We can see that using this method, the $\lambda$ that gives us the least error is 
 the 8th one, with a value of 27.7.
 
-## Choosing $\lambda$ with MPSE and K-fold cross-validation
+## 1.2. Choosing $\lambda$ with MPSE and K-fold cross-validation
 
-We have also done the implementation of k-fold cross-validation. In this case we split the dataset in K differnet parts, then we train the model using K - 1 parts and leave the remaining one to validate the model, thats it, calculating the MSE. Once we have calculated the value of the errors for each $\lambda$ and for each fold, we average the squared error values and return them. From these averaged values we choose the model with the lower error as our MSPE.
+We have also done the implementation of k-fold cross-validation. In this case we split the dataset in K different parts, then we train the model using K - 1 parts and leave the remaining one to validate the model. In other words, calculating the MSE. 
 
+Once we have calculated the value of the errors for each $\lambda$ and for each fold, we average the squared error values and return them. From these averaged values we choose the model with the lowest error globally as our MSPE.
+
+### 10-Fold Cross validation
 Using a 10-fold CV, we obtain the following plot:
 
 ```{r plotcv10, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
@@ -68,9 +73,14 @@ abline(v=log(1+lambda.mspe.10),col=2,lty=2)
 lambda.v[minPos]
 ```
 
-It seems that in this case, we are selecting the one with $\lambda_{9} = 45.41$.
+It seems that in this case, we are selecting the one with $\lambda_{5} = 5.81$.
 
-If we use a 5-fold CV:
+Which means that since $\lambda$ is not that large, we are not penalizing that much.
+
+\newpage 
+
+### 5-Fold Cross validation
+Now let's try with a lower value of k, where $k = 5$. Thus, let's try with 5-fold Cross-Validation:
 
 ```{r plotcv5, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
 plot(log(1+lambda.v), mspe.5)
@@ -81,9 +91,14 @@ abline(v=log(1+lambda.mspe.5),col=2,lty=2)
 (minPos = which.min(mspe.5))
 lambda.v[minPos]
 ```
-Now the selected  $\lambda$ with the least error is the one on the 9th position with
- $\lambda = 45.41$.
+Now the selected  $\lambda$ with the least error is the one on the 4th position with
+ $\lambda = 3.21$.
  
+ The selected lambda is much lower than that obtained with 10-fold, so it is penalizing even less than before the complexity of the model.
+ 
+ 
+## 1.3. Comparison with other models
+
  Let's now proceed onto compare those results with those obtained from using the methods of leave-one-out cross-validation and Generalized Cross-Validation.
  
 ```{r}
@@ -91,7 +106,7 @@ mspe.cv <- MSPEcv(X, Y, n.lambdas, lambda.v, n)
 mspe.gcv <- MSPEgcv(X, Y, n.lambdas, lambda.v, beta.path, diag.H.lambda, n)
 ```
 
-```{r plotting2, echo=FALSE,  out.width="250px", out.height="250px", fig.align="center"}
+```{r plotting2, echo=FALSE,  out.width="300px", out.height="300px", fig.align="center"}
 plot(df.v, MSPE.val)
 points(df.v, mspe.cv,col=13,pch=19,cex=.75)
 points(df.v, mspe.5,col=12,pch=19,cex=.75)
@@ -108,11 +123,59 @@ legend("topright",
 
 ```
 
-It is clear how the method of validation is the one that gives the less error for the values of parameters in the effective degrees of freedom. Yet the number of parameters established by the degrees of freedom is different for the validation ridge regression than for the other. In the validation approach the optimal amount of df is __5.88__ while for the other methods it seems that the optimal amount of parameters is __6.79__
+From the plot we can observe many things. First and foremost, it is clear how the method of validation is the one that gives the least error for the values of parameters in the effective degrees of freedom. 
+
+Yet the number of parameters established by the degrees of freedom is different for the validation ridge regression than for the others. 
+
+Let's replot it looking for the optimal amount of df.
+
+```{r plotting_opt, echo=FALSE,  out.width="300px", out.height="300px", fig.align="center"}
+plot(df.v, MSPE.val)
+points(df.v, mspe.cv,col=13,pch=19,cex=.75)
+points(df.v, mspe.5,col=12,pch=19,cex=.75)
+points(df.v, mspe.10,col=8,pch=19,cex=.75)
+points(df.v, mspe.gcv,col=10,pch=19,cex=.5)
+
+abline(v=df.v[which.min(mspe.10)],col=8,lty=2,lwd=2)
+text(x=df.v[which.min(mspe.10)], y = mspe.10[which.min(mspe.10)], labels = "10-F",col=1)
+
+abline(v=df.v[which.min(mspe.5)],col=12,lty=2,lwd=2)
+text(x=df.v[which.min(mspe.5)], y = mspe.5[which.min(mspe.5)], labels = "5-F",col=12)
+
+abline(v=df.v[which.min(MSPE.val)],col=1,lty=2,lwd=2)
+text(x=df.v[which.min(MSPE.val)], y = MSPE.val[which.min(MSPE.val)], labels = "Val.",col=1)
+
+
+abline(v=df.v[which.min(mspe.cv)],col=1,lty=2,lwd=2)
+text(x=df.v[which.min(mspe.cv)], y = mspe.cv[which.min(mspe.cv)], labels = "CV",col=13)
+
+abline(v=df.v[which.min(mspe.gcv)],col=1,lty=2,lwd=2)
+text(x=df.v[which.min(mspe.gcv)], y = mspe.gcv[which.min(mspe.gcv)], labels = "GCV",col=10)
+```
+
+Since the text overlaps and there seems to be methods where the df is the same,  we are just going the print the adequate degrees of freedom for each method:
+
+```{r df, echo=FALSE}
+df = data.table("MSPE Method" = character(), "df.v" = numeric(), "MSPE" = numeric(),
+    stringsAsFactors = FALSE)
+
+df = rbind(df, list("Validation", df.v[which.min(MSPE.val)], MSPE.val[which.min(MSPE.val)]))
+df = rbind(df, list("Leave-one-out (CV)", df.v[which.min(mspe.cv)], mspe.cv[which.min(mspe.cv)]))
+df = rbind(df, list("5-Fold val.", df.v[which.min(mspe.5)], mspe.5[which.min(mspe.5)]))
+df = rbind(df, list("10-Fold val.", df.v[which.min(mspe.10)], mspe.10[which.min(mspe.10)]))
+df = rbind(df, list("Generalized C.V.", df.v[which.min(mspe.gcv)], mspe.gcv[which.min(mspe.gcv)]))
+
+kable(df)
+```
+
+We can see that the Validation approach has the lowest optimal number of degrees of freedom. Meanwhile, Leave-one-out (CV in the plot) and 5-Fold Validation have the same df selected with slightly different obtained MSPE values.
+
+The same happens with 10-fold validation and Generalized C.V., where the df.v chosen is the same with slightly different values for the MSPE obtained.
+
 
 \newpage
 
-# Ridge Regression for Boston Housing Area
+# 2. Ridge Regression for Boston Housing Area
  Now, we are going to proceed to apply Ridge Regression to the Boston Housing Dataset.
  
  **Please note that we have not found uploaded on `El Racó` the corrected dataset.**
@@ -126,6 +189,9 @@ We have then created a vector $Y$ which is the response variable. It has been ce
 ```{r include=FALSE, echo=FALSE}
 source("boston.R")
 ```
+
+We proceed as before: we first plot the comparison and then produce a table to compare results.
+
 
 ```{r plotting, echo=FALSE,  out.width="300px", out.height="300px", fig.align='center'}
 plot(df.v, MSPE.val)
@@ -146,6 +212,19 @@ legend("topright",
        col=c(9, 13, 12, 8, 10, 1, 2)
        )
 
+```
+
+```{r df2, echo=FALSE}
+df = data.table("MSPE Method" = character(), "df.v" = numeric(), "MSPE" = numeric(),
+    stringsAsFactors = FALSE)
+
+df = rbind(df, list("Validation", df.v[which.min(MSPE.val)], MSPE.val[which.min(MSPE.val)]))
+df = rbind(df, list("Leave-one-out (CV)", df.v[which.min(mspe.cv)], mspe.cv[which.min(mspe.cv)]))
+df = rbind(df, list("5-Fold val.", df.v[which.min(mspe.5)], mspe.5[which.min(mspe.5)]))
+df = rbind(df, list("10-Fold val.", df.v[which.min(mspe.10)], mspe.10[which.min(mspe.10)]))
+df = rbind(df, list("Generalized C.V.", df.v[which.min(mspe.gcv)], mspe.gcv[which.min(mspe.gcv)]))
+
+kable(df)
 ```
 
  We can see that we get higher values on the  MSPE 5-Fold, the lowest ones obtained from
