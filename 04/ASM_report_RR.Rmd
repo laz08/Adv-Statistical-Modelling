@@ -54,7 +54,7 @@ the 8th one, with a value of 27.7.
 
 ## Choosing $\lambda$ with MPSE and K-fold cross-validation
 
-We have also done the implementation of k-fold cross-validation. In this case we split the dataset in K differnet parts, then we train the model using K - 1 parts and leave the remaining one to validate the model, thats it, calculating the MSE. Once we have calculated the value of the $\lambda$ for each fold, we choose the value $\lambda$ from each iteration of k that gives the less error.
+We have also done the implementation of k-fold cross-validation. In this case we split the dataset in K differnet parts, then we train the model using K - 1 parts and leave the remaining one to validate the model, thats it, calculating the MSE. Once we have calculated the value of the errors for each $\lambda$ and for each fold, we average the squared error values and return them. From these averaged values we choose the model with the lower error as our MSPE.
 
 Using a 10-fold CV, we obtain the following plot:
 
@@ -69,7 +69,6 @@ lambda.v[minPos]
 ```
 
 It seems that in this case, we are selecting the one with $\lambda_{9} = 45.41$.
-
 
 If we use a 5-fold CV:
 
@@ -109,9 +108,7 @@ legend("topright",
 
 ```
 
-
-TODO: Interpret plot
-
+It is clear how the method of validation is the one that gives the less error for the values of parameters in the effective degrees of freedom. Yet for 
 
 \newpage
 
@@ -157,4 +154,4 @@ legend("topright",
 In this case, the 10-fold method does not prove as a good method for it declines until reaching 0.
 
 The generalized Cross-validation method as well as the leave one out (MSPE.CV) follow close
-the MSPE 5-fold evolution and in fact have a greater value when df.v > 9.
+the MSPE 5-fold evolution and in fact have a greater value when df.v > 9. Yet the different methods provide different optimal number for optimal parameters. For all methods besides validation we can see how the optimal number of parameters is 13, while for the validation is 7.
