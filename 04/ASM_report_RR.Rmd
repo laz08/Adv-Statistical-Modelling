@@ -68,8 +68,7 @@ abline(v=log(1+lambda.mspe.10),col=2,lty=2)
 lambda.v[minPos]
 ```
 
-It seems that in this case, we are selecting the one with $\lambda = 0$, which means
-we are not penalizing.
+It seems that in this case, we are selecting the one with $\lambda_{9} = 45.41$.
 
 
 If we use a 5-fold CV:
