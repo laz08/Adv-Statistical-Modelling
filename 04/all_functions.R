@@ -44,7 +44,7 @@ MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
     
     MPSE2 <- c()
     for (i in 1:n.lambdas){
-        MPSE2 <- append(MPSE2, min(MPSE[,i]))
+        MPSE2 <- append(MPSE2, mean(MPSE[,i]))
     }
     return(MPSE2)
 }
