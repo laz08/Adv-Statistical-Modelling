@@ -54,7 +54,7 @@ the 8th one, with a value of 27.7.
 
 ## Choosing $\lambda$ with MPSE and K-fold cross-validation
 
-We have also done the implementation of k-fold cross-validation. 
+We have also done the implementation of k-fold cross-validation. In this case we split the dataset in K differnet parts, then we train the model using K - 1 parts and leave the remaining one to validate the model, thats it, calculating the MSE. Once we have calculated the value of the $\lambda$ for each fold, we choose the value $\lambda$ from each iteration of k that gives the less error.
 
 Using a 10-fold CV, we obtain the following plot:
 
