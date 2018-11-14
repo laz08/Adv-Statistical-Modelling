@@ -234,10 +234,26 @@ In all the other methods the MSPE value is $$23 \le MSPE \le 24 $$
 and the degrees of freedom selected either 12.53 or 12.72.
 
 
- We can see that we get higher values on the  MSPE 5-Fold, the lowest ones obtained from
- MSPE val (that using, using an 80% of the data as training and 20% of the original dataset as a validation set).
- 
-In this case, the 10-fold method does not prove as a good method for it declines until reaching 0.
 
-The generalized Cross-validation method as well as the leave one out (MSPE.CV) follow close
-the MSPE 5-fold evolution and in fact have a greater value when df.v > 9. Yet the different methods provide different optimal number for optimal parameters. For all methods besides validation we can see how the optimal number of parameters is 13, while for the validation is 7.
+ We can see that we get slightly higher values on the  MSPE 5-Fold than the 10-Fold.
+ 
+The Validation  method, using an 80% of the data as training and 20% of the original dataset as a validation set, gives us the lowest values by a large margin respect to the other methods.
+
+However, when $df.f = 10$ they all end up converging on a MSPE value around 25.
+
+
+The generalized Cross-validation method as well as the leave one out (MSPE.CV) are very close to the K-Fold methods and their evolution over different df.v is very similar, almost identic.
+ 
+## Choosing $\lambda$ for the Boston dataset
+
+Because of reasoning explained in the previous section, we are going to choose the $\lambda$ according to the Validation method as an example:
+
+```{r plot_val_boston, echo=FALSE, out.width="250px", out.height="250px", fig.align="center"}
+plot(log(1+lambda.v), MSPE.val)
+abline(v=log(1+lambda.val),col=2,lty=2)
+```
+```{r}
+(minPos = which.min(MSPE.val))
+lambda.v[minPos]
+```
+We can see that the 12th lambda is the one with the lowest MSPE value with $$\lambda_{12} = 194.73$$.
