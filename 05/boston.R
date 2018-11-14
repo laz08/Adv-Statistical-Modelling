@@ -15,19 +15,34 @@ Y <- scale( Boston$medv, center=TRUE, scale=FALSE)
 X <- scale( as.matrix(Boston[,1:13]), center=TRUE, scale=TRUE)
 n <- dim(X)[1]
 p <- dim(X)[2]
+XtX <- t(X)%*%X 
+d2 <- eigen(XtX,symmetric = TRUE, only.values = TRUE)$values
+df.v <- numeric(n.lambdas)
+for (l in 1:n.lambdas){
+  lambda <- lambda.v[l]
+  df.v[l] <- sum(d2/(d2+lambda)) 
+}
+
+
 
 # 1
 m1.lasso <- glmnet(X, Y)
 summary(m1.lasso)
-plot(m1.lasso$df, m1.lasso$lambda)
+plot(m1.lasso$df, m1.lasso$lambda, type='b')
 
 # 2
 m2.rr <- glmnet(X, Y, alpha=0)
 summary(m2.rr)
-plot(m2.rr$df, m2.rr$lambda)
-
-m3.rr <- cv.glmnet(X, Y, nfolds=10)
-plot(m3.rr$glmnet.fit$df, m3.rr$glmnet.fit$lambda)
+plot(m2.rr)
+m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda = lambda.v)
+plot(m3.rr)
 
 m4.rr <-  MSPEkfold(X, Y, 10, n.lambdas, lambda.v, n)
-lambda.CV.H.lambda <- lambda.v[which.min(m4.rr)]
+
+#lambda.CV.H.lambda <- lambda.v[which.min(m4.rr)]
+plot(log(m3.rr$lambda), cvm)
+points(log(m3.rr$lambda), rev(m4.rr), col=5)
+
+plot(m3.rr$glmnet.fit$df, m3.rr$cvm, col=1,pch=19,cex=.75)
+points(df.v, m4.rr,col=8,pch=19,cex=.75)
+
