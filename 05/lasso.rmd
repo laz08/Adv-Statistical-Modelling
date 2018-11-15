@@ -37,26 +37,30 @@ for (l in 1:n.lambdas){
 
 ```
 
-### 1 
+### 1  For the Boston House-price corrected dataset use Lasso estimation (in glmnet) to fit the regression model where the response is CMEDV (the corrected version of MEDV) and the explanatory variables are the remaining 13 variables in the previous list. Try to provide an interpretation to the estimated model.
+
+We want to note that we did not find the mentioned dataset in the raco, and as such we have used the one in the package _MASS_, which does not have the corrected version of MEDV, and as such we will be using MEDV as our target variable.
 
 ```{r}
 m1.lasso <- glmnet(X, Y, lambda= lambda.v)
 summary(m1.lasso)
-plot(m1.lasso)
+plot(m1.lasso, xvar="lambda")
+plot(log(m1.lasso$lambda), m1.lasso$dev.ratio, type='b')
 ```
+
 Caldria computar el lambda minim + sd per saber quin valor agafar
 
 
-### 2
+### 2 Use glmnet to fit the previous model using ridge regression. Compare the 10-fold cross validation results from function cv.glmnet with those you obtained in the previous practice with your own functions.
 
 ```{r}
 m2.rr <- glmnet(X, Y, alpha=0)
 summary(m2.rr)
-plot(m2.rr)
+plot(m2.rr,  xvar="lambda")
 plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
 # Same as up
 ```
-
+As expected we can see how the error goes down the higer the value of the lamdas.
 ```{r}
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
 plot(m3.rr)
@@ -66,6 +70,10 @@ cvm <- rev(m3.rr$cvm)
 
 m4.rr <-  MSPEkfold(X, Y, 10, n.lambdas, lambda.v, n)
 points(log(lambda.v), m4.rr, col=5)
+
+min.lambda <- data.frame("K.fold" = lambda.v[which.min(m4.rr)], "glmnet" = m3.rr$lambda.min)
+min.df <- data.frame("K.fold" = df.v[which.min(m4.rr)],"glmnet" =df.v[which(lambda.v == m3.rr$lambda.min)])
+(result <- rbind(min.df, min.lambda))
 ```
 
 

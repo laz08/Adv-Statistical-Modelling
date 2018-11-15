@@ -28,14 +28,16 @@ for (l in 1:n.lambdas){
 # 1
 m1.lasso <- glmnet(X, Y, lambda= lambda.v)
 summary(m1.lasso)
-plot(m1.lasso)
+plot(m1.lasso,  xvar="lambda"))
 
 plot(log(m1.lasso$lambda), m1.lasso$dev.ratio, type='b')
 abline(v=log(min(m1.lasso$lambda)),col=2,lty=2)
 # 2
 m2.rr <- glmnet(X, Y, alpha=0)
 summary(m2.rr)
-plot(m2.rr)
+plot(m2.rr,  xvar="lambda"))
+plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
+
 
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
 plot(m3.rr)
