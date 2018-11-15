@@ -1,8 +1,20 @@
+---
+title: "Lab2"
+author: "Sergi Carol Laura Cebollero Alex Rodriguez"
+date: "November 15, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(MASS)
 library(glmnet)
 data(Boston) # TODO: Check for the Boston Corrected dataset (where to download it?)
 source("all_functions.R")
+```
 
+
+```{r}
 set.seed(123)
 
 lambda.max <- 1e5
@@ -23,29 +35,41 @@ for (l in 1:n.lambdas){
   df.v[l] <- sum(d2/(d2+lambda)) 
 }
 
+```
 
+### 1 
 
-# 1
+```{r}
 m1.lasso <- glmnet(X, Y, lambda= lambda.v)
 summary(m1.lasso)
 plot(m1.lasso)
+```
+Caldria computar el lambda minim + sd per saber quin valor agafar
 
-plot(log(m1.lasso$lambda), m1.lasso$dev.ratio, type='b')
-abline(v=log(min(m1.lasso$lambda)),col=2,lty=2)
-# 2
+
+### 2
+
+```{r}
 m2.rr <- glmnet(X, Y, alpha=0)
 summary(m2.rr)
 plot(m2.rr)
+plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
+# Same as up
+```
 
+```{r}
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
 plot(m3.rr)
 abline(v=log(m3.rr$lambda.min),col=2,lty=2)
 abline(v=log(m3.rr$lambda.1se),col=2,lty=2)
 cvm <- rev(m3.rr$cvm)
+
 m4.rr <-  MSPEkfold(X, Y, 10, n.lambdas, lambda.v, n)
-
 points(log(lambda.v), m4.rr, col=5)
+```
 
+
+```{r}
 lambda.glm <- m3.rr$lambda
 df.v.g <- numeric(n.lambdas)
 for (l in 1:n.lambdas){
@@ -54,4 +78,6 @@ for (l in 1:n.lambdas){
 }
 plot(df.v, m3.rr$cvm, col=1,pch=19,cex=.75)
 points(df.v, m4.rr,col=8,pch=19,cex=.75)
+```
+
 
