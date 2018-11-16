@@ -9,6 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 library(MASS)
 library(glmnet)
+library(knitr)
 data(Boston) # TODO: Check for the Boston Corrected dataset (where to download it?)
 source("all_functions.R")
 ```
@@ -61,6 +62,8 @@ plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
 # Same as up
 ```
 As expected we can see how the error goes down the higer the value of the lamdas.
+
+In order to compare the two models ww will use the same lambdas that we have generated and feed them two both methods, thus ensuring that the results are not tricked by using differnet values of lambdas, we will also set the __standardize__ flag to false since our data is already standardized. 
 ```{r}
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
 plot(m3.rr)
@@ -70,12 +73,16 @@ cvm <- rev(m3.rr$cvm)
 
 m4.rr <-  MSPEkfold(X, Y, 10, n.lambdas, lambda.v, n)
 points(log(lambda.v), m4.rr, col=5)
+legend("bottomright", c("glmnet error", "k.fold error"), col=c(2,5), lty=c(2,2), lwd=c(1,1)) # FIX
 
 min.lambda <- data.frame("K.fold" = lambda.v[which.min(m4.rr)], "glmnet" = m3.rr$lambda.min)
 min.df <- data.frame("K.fold" = df.v[which.min(m4.rr)],"glmnet" =df.v[which(lambda.v == m3.rr$lambda.min)])
-(result <- rbind(min.df, min.lambda))
+result <- rbind(min.df, min.lambda)
+row.names(result) <- c("df", "lambda")
+kable(result)
 ```
 
+Interestingly we see how the values differ from our method to the one implemented by __glmnet__, most noticiabely the value of the optimal lambda is increased by more than 4 units, yet the value of the degrees of freedom remains similar. We are not sure if our model is wrongly implemented or it simply that the glmnet method is doing things differnetly from what we did. Yet if we take a look at the plot which compares the Mean Square error to with the values of the lambdas we can see how both models seem to follow the same shape, but our model starts the curve later on, meaning that it does not start increasing the error until higher values of $\lambda$
 
 ```{r}
 lambda.glm <- m3.rr$lambda
@@ -84,8 +91,10 @@ for (l in 1:n.lambdas){
   lambda <- lambda.glm[l]
   df.v.g[l] <- sum(d2/(d2+lambda)) 
 }
-plot(df.v, m3.rr$cvm, col=1,pch=19,cex=.75)
+plot(df.v, cvm, col=1,pch=19,cex=.75)
 points(df.v, m4.rr,col=8,pch=19,cex=.75)
-```
+``` 
 
+In this plot we are comparing the value sof the degrees of freedom against the mean square error, we can clearly see how both methods start and finish in the same values, which is expected, yet there is a big differnece in the values between, our method lowers the error faster with lower values of _df_, yet it seems to stagnate with higher value of the degrees of freedom. Meanwhile the glmnet method follow more of a curve torwards lower error but higher degrees of freedom. It seems that our method is better if we want to use lower lambdas since it provides less error.
+<!-- Enserio wtf esta passant aqui-->
 
