@@ -12,6 +12,15 @@ library(glmnet)
 library(knitr)
 data(Boston) # TODO: Check for the Boston Corrected dataset (where to download it?)
 source("all_functions.R")
+
+wd = getwd()
+if(grepl("nora", wd)) {
+    setwd("~/Documents/18-19/ASM/HW/05")
+} else {
+    ## Put working path for Sergi and Alex
+}
+rm(wd)
+
 ```
 
 # 1. Lasso for the Boston Housing Area
@@ -125,3 +134,6 @@ In this plot we are comparing the value sof the degrees of freedom against the m
 TODO
 
 # 2. SPAM E-mail Database
+```{r echo=FALSE}
+source("./spam/spam.R")
+```
