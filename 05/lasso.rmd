@@ -94,10 +94,25 @@ In order to compare the two models we will use the same lambdas that we have gen
 
 We will also set the __standardize__ flag to false since our data is already standardized as seen in the first block of code. Opting to use the original that without centering and standarizing it could have also been an option, too.
 
+We have tried sending to glmnet the data without centering it ourselves and letting the function standardize it itself, but the results have been the same.
+
+```{r eval=FALSE, echo=FALSE, include=FALSE}
+Y2 <- scale(Boston$medv, center=TRUE, scale=FALSE)
+X2 <- scale(as.matrix(Boston[,1:13]), center=TRUE, scale=FALSE)
+n <- dim(X2)[1]
+p <- dim(X2)[2]
+XtX2 <- t(X2)%*%X2 
+d22 <- eigen(XtX2,symmetric = TRUE, only.values = TRUE)$values
+
+
+m3.rr <- cv.glmnet(X2, Y2, nfolds=10, lambda =  lambda.v, standardize=TRUE, intercept=FALSE, alpha=0)
+
+```
+
 
 ```{r}
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
-plot(m3.rr)
+plot(m3.rr, main="Lambdas")
 abline(v=log(m3.rr$lambda.min),col=2,lty=2)
 abline(v=log(m3.rr$lambda.1se),col=2,lty=2)
 cvm <- rev(m3.rr$cvm)
@@ -110,12 +125,17 @@ min.lambda <- data.frame("K.fold" = lambda.v[which.min(m4.rr)], "glmnet" = m3.rr
 min.df <- data.frame("K.fold" = df.v[which.min(m4.rr)],"glmnet" =df.v[which(lambda.v == m3.rr$lambda.min)])
 result <- rbind(min.df, min.lambda)
 row.names(result) <- c("df", "lambda")
+
 kable(result)
 ```
 
-Interestingly enough, we see how the values differ from our method to the one implemented by __glmnet__, most noticebly the value of the optimal lambda is increased by more than 4 units, yet the value of the degrees of freedom remains similar. We are not sure if our model is wrongly implemented or it simply that the glmnet method is doing things differently from what we did in our implementation. 
+Interestingly enough, we see how the values differ from our method to the one implemented by __glmnet__. Taking a look at the table, the most noticeable thing is that the optimal lambda is increased by more than 4 units, yet the value of the degrees of freedom remains almost the same. 
 
-Yet if we take a look at the plot which compares the Mean Square error to with the values of the lambdas we can see how both models seem to follow the same shape, but our model starts the curve later on, meaning that it does not start increasing the error until higher values of $\lambda$
+We are not sure if our model is wrongly implemented or it is simply that the glmnet method is doing things differently from what we did in our implementation. 
+
+Yet if we take a look at the plot which compares the Mean Square error to with the values of the lambdas we can see how both models seem to follow the same shape.
+
+However, our model starts the curve later on (around 4 units), meaning that the Mean Squared Error does not start increasing until reaching higher values of $\lambda$.
 
 ```{r}
 lambda.glm <- m3.rr$lambda
@@ -124,16 +144,40 @@ for (l in 1:n.lambdas){
   lambda <- lambda.glm[l]
   df.v.g[l] <- sum(d2/(d2+lambda)) 
 }
-plot(df.v, cvm, col=1,pch=19,cex=.75)
+
+plot(df.v, cvm, col=1,pch=19,cex=.75, ylab="MSE", xlab="Degrees of freedom", main="Comparison of MSE models")
 points(df.v, m4.rr,col=8,pch=19,cex=.75)
+
+legend("topright",
+       c("glmnet","kfold"),
+       pch=c(19, 19),
+       col=c(8, 1)
+       )
+
+
 ``` 
 
-In this plot we are comparing the value sof the degrees of freedom against the mean square error, we can clearly see how both methods start and finish in the same values, which is expected, yet there is a big differnece in the values between, our method lowers the error faster with lower values of _df_, yet it seems to stagnate with higher value of the degrees of freedom. Meanwhile the glmnet method follow more of a curve torwards lower error but higher degrees of freedom. It seems that our method is better if we want to use lower lambdas since it provides less error.
-<!-- Enserio wtf esta passant aqui-->
+In this plot we are comparing the values of the degrees of freedom against the mean square error.
 
-TODO
+We can clearly see how both methods start and finish in the same values, which is expected.
 
-# 2. SPAM E-mail Database
-```{r echo=FALSE}
-source("./spam/spam.R")
-```
+Yet there is a big difference in the values between: our method lowers the error slower as more degrees of freedom are reached (so less variables are used).
+
+Meanwhile the glmnet method follows more of a curve on the opposite sides towards lower error. It seems to stagnate when reaching higher degrees of freedom.
+
+Assuming our method is correct, it seems that our implementation of k-fold is worse, since unless we reach 13 degrees of freedom, the MSE does not lower below 40.
+
+The glmnet function proves to be getting less error around 4/6 degrees of freedom, so this would be our preferred method.
+
+<!-- 
+    Sergi: Enserio que esta passant aqui?
+    Laura: Jo diria que la nostra impl. no esta be. Pero com no tenim la correccio....
+    
+-->
+## Final discussion
+
+Our conclussion is that maybe our method has not been properly implemented, since we are having the same issues when passing the data untouched to glmnet and telling it to standardize it itself.
+
+This tells us that the root of the discrepancies of the results emerge probably from a bad implementation from our side of the k-Fold function. However, we have rechecked it and we cannot pinpoint our fault in the implementation.
+
+Thus, we will remain waiting for the correction of the first lab to correct this one.
