@@ -1,5 +1,5 @@
 ---
-title: "Lab2"
+title: "ASM - LASSO"
 author: "Sergi Carol Laura Cebollero Alex Rodriguez"
 date: "November 15, 2018"
 output: pdf_document
@@ -14,8 +14,8 @@ data(Boston) # TODO: Check for the Boston Corrected dataset (where to download i
 source("all_functions.R")
 ```
 
-
-```{r}
+# 1. Lasso for the Boston Housing Area
+```{r results=FALSE}
 set.seed(123)
 
 lambda.max <- 1e5
@@ -24,6 +24,7 @@ lambda.v <- exp(seq(0,log(lambda.max+1),length=n.lambdas))-1
 ## Data exploration
 summary(Boston)
 
+# Prepare data
 Y <- scale( Boston$medv, center=TRUE, scale=FALSE)
 X <- scale( as.matrix(Boston[,1:13]), center=TRUE, scale=TRUE)
 n <- dim(X)[1]
@@ -35,24 +36,41 @@ for (l in 1:n.lambdas){
   lambda <- lambda.v[l]
   df.v[l] <- sum(d2/(d2+lambda)) 
 }
-
 ```
 
-### 1  For the Boston House-price corrected dataset use Lasso estimation (in glmnet) to fit the regression model where the response is CMEDV (the corrected version of MEDV) and the explanatory variables are the remaining 13 variables in the previous list. Try to provide an interpretation to the estimated model.
+## 1.1.  For the Boston House-price corrected dataset use Lasso estimation (in glmnet) to fit the regression model where the response is CMEDV (the corrected version of MEDV) and the explanatory variables are the remaining 13 variables in the previous list. Try to provide an interpretation to the estimated model.
 
-We want to note that we did not find the mentioned dataset in the raco, and as such we have used the one in the package _MASS_, which does not have the corrected version of MEDV, and as such we will be using MEDV as our target variable.
+**$\rightarrow$** First of all, we want to note that we did not find the  mentioned corrected dataset in `El Raco`, and as such we have used the one in the package _MASS_, which does not have the corrected version of MEDV. Because of this, we will be using MEDV as our target variable.
 
 ```{r}
-m1.lasso <- glmnet(X, Y, lambda= lambda.v)
+m1.lasso <- glmnet(X, Y, lambda=lambda.v)
 summary(m1.lasso)
+minLambda = min(m1.lasso$lambda + m1.lasso$dev)
+
 plot(m1.lasso, xvar="lambda")
 plot(log(m1.lasso$lambda), m1.lasso$dev.ratio, type='b')
+abline(v=minLambda,col=2,lty=2)
 ```
 
-Caldria computar el lambda minim + sd per saber quin valor agafar
+TODO Sergi: Caldria computar el lambda minim + sd per saber quin valor agafar
+
+TODO Laura: Algo com lo de dalt?
 
 
-### 2 Use glmnet to fit the previous model using ridge regression. Compare the 10-fold cross validation results from function cv.glmnet with those you obtained in the previous practice with your own functions.
+### Interpretation
+
+TODO: Check this. Anything else to add? On the second plot, for example...
+
+
+In the plot above, each colored line is a different coefficient value in our model.
+
+We can see that when lambda is small we use all the variables, but as lambda increases, these variables are not used anymore. 
+
+Or in other words, less variables are allowed because we are increasing lambda, thus we are having a greater penalization on the number of variables used.
+
+On the second plot....
+
+## 1.2. Use glmnet to fit the previous model using ridge regression. Compare the 10-fold cross validation results from function cv.glmnet with those you obtained in the previous practice with your own functions.
 
 ```{r}
 m2.rr <- glmnet(X, Y, alpha=0)
@@ -61,9 +79,13 @@ plot(m2.rr,  xvar="lambda")
 plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
 # Same as up
 ```
-As expected we can see how the error goes down the higer the value of the lamdas.
+As expected we can see how the error goes down the higher the value of the lamdas.
 
-In order to compare the two models ww will use the same lambdas that we have generated and feed them two both methods, thus ensuring that the results are not tricked by using differnet values of lambdas, we will also set the __standardize__ flag to false since our data is already standardized. 
+In order to compare the two models we will use the same lambdas that we have generated and feed them to both methods, thus ensuring that the results are not tricked by using differnet values of lambdas.
+
+We will also set the __standardize__ flag to false since our data is already standardized as seen in the first block of code. Opting to use the original that without centering and standarizing it could have also been an option, too.
+
+
 ```{r}
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
 plot(m3.rr)
@@ -82,7 +104,9 @@ row.names(result) <- c("df", "lambda")
 kable(result)
 ```
 
-Interestingly we see how the values differ from our method to the one implemented by __glmnet__, most noticiabely the value of the optimal lambda is increased by more than 4 units, yet the value of the degrees of freedom remains similar. We are not sure if our model is wrongly implemented or it simply that the glmnet method is doing things differnetly from what we did. Yet if we take a look at the plot which compares the Mean Square error to with the values of the lambdas we can see how both models seem to follow the same shape, but our model starts the curve later on, meaning that it does not start increasing the error until higher values of $\lambda$
+Interestingly enough, we see how the values differ from our method to the one implemented by __glmnet__, most noticebly the value of the optimal lambda is increased by more than 4 units, yet the value of the degrees of freedom remains similar. We are not sure if our model is wrongly implemented or it simply that the glmnet method is doing things differently from what we did in our implementation. 
+
+Yet if we take a look at the plot which compares the Mean Square error to with the values of the lambdas we can see how both models seem to follow the same shape, but our model starts the curve later on, meaning that it does not start increasing the error until higher values of $\lambda$
 
 ```{r}
 lambda.glm <- m3.rr$lambda
@@ -98,3 +122,6 @@ points(df.v, m4.rr,col=8,pch=19,cex=.75)
 In this plot we are comparing the value sof the degrees of freedom against the mean square error, we can clearly see how both methods start and finish in the same values, which is expected, yet there is a big differnece in the values between, our method lowers the error faster with lower values of _df_, yet it seems to stagnate with higher value of the degrees of freedom. Meanwhile the glmnet method follow more of a curve torwards lower error but higher degrees of freedom. It seems that our method is better if we want to use lower lambdas since it provides less error.
 <!-- Enserio wtf esta passant aqui-->
 
+TODO
+
+# 2. SPAM E-mail Database
