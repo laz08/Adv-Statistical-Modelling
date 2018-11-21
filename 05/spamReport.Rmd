@@ -60,10 +60,11 @@ x.val <- as.matrix(val.set[, 1:57])
 y.val <- as.factor(val.set$spam.01)
 
 table(y.val)
-
 ```
 
 # Classification rules
+
+With the different sets of data created we can now procede to the creation of the differnet models, we will start using the standar _glm_ model. The model is pretty simple, we will try to predict the value of _spam.01_, it is important to note that we are setting the parameter __family__ to _binomial_ since this is the distribution of our response. We can also see how the method produces an error, this is normal since it simply says that the covariates are nearly perfect predictors.
 
 ## Logistic regression fitted by maximum likelihood.
 
@@ -78,7 +79,7 @@ plot(m1$fit~train.set$spam.01,
 y.pred <- predict(m1, as.data.frame(x.val), type="response")
 summary(y.pred)
 
-y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
+y_pred_num <- ifelse(y.pred < 0.5, 0, 1) # Convert values to 0 and 1
 table(y_pred_num)
 
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
@@ -95,7 +96,11 @@ plot(perf, col=rainbow(7), main="ROC curve", xlab="Specificity",
 abline(0, 1) #add a 45 degree line
 ```
 
+There a few thing we want to point out from this code, the first one is that since the prediction model does not return 0s or 1s (as expected), we must convert these values to 0s and 1s ourselves, for this case any predicted value equal or higher than 0.5 will become a 1 and a 0 if lower.
 
+Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy, moreover it is more interesting to look at the rate of badily classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. From the table we can clearly see how __COM ES CALCULAVA AIXO?__.
+
+We have also calculated the ROC curve, which gives a general idea of how good the model is. It does indeed show that we have a pretty good model.
 ## Logistic regression fitted by LASSO
 
 ```{r}
