@@ -1,0 +1,85 @@
+---
+title: "ASM - LASSO Spam"
+author: "Sergi Carol, Laura Cebollero, Alex Rodriguez"
+date: "21st November, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library("data.table")
+library("knitr")
+library("glmnet")
+```
+
+# Introduction
+
+
+
+# Reading the data
+```{r}
+source("spam.R")
+```
+
+
+# Preparing the data
+
+```{r}
+totalNumObs = nrow(spam)
+
+mail.spam = spam[which(spam$spam.01 == 1), ]
+mail.non.spam = spam[which(spam$spam.01 == 0), ]
+
+
+## Proportions of Spam
+train.prop.spam = 2*nrow(mail.spam)/3
+
+spam.training = mail.spam[1:train.prop.spam,]
+spam.val = mail.spam[train.prop.spam:nrow(mail.spam),]
+
+
+## Proportions non-spam
+train.prop.no.spam = 2*nrow(mail.non.spam)/3
+
+non.spam.training = mail.non.spam[1:train.prop.no.spam,]
+non.spam.val = mail.non.spam[train.prop.no.spam:nrow(mail.non.spam),]
+
+
+## Merging
+
+train.set = rbind(spam.training, non.spam.training)
+val.set = rbind(spam.val, non.spam.val)
+
+
+## Scaling and centering
+sc.train.set <- scale(train.set)
+
+mat.train.set <- as.matrix(train.set)
+mean.train.set <- mean(mat.train.set)
+sd.train.set <- sd(mat.train.set)
+
+# Scale validation set
+sc.val.set <- (val.set - mean.train.set)/sd.train.set
+# restore spam col
+sc.val.set$spam.01 <- val.set$spam.01
+```
+
+# Classification rules
+
+## Logistic regression fitted by maximum likelihood.
+
+```{r}
+log.reg.fit <- glm( sc.train.set[, 58] ~ sc.train.set[, 1:57])
+
+y.pred <- predict(log.reg.fit, sc.val.set[, 1:57])
+```
+
+
+## Logistic regression fitted by LASSO
+
+## K-NN binary regression
+
+
+<!-- For each rule, state the missclassifcation rate and so on.
+
+Optional:  Compute the confussion table + ROC + AUC -->
+

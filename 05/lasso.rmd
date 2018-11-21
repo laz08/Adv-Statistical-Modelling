@@ -1,6 +1,6 @@
 ---
 title: "ASM - LASSO"
-author: "Sergi Carol Laura Cebollero Alex Rodriguez"
+author: "Sergi Carol, Laura Cebollero, Alex Rodriguez"
 date: "November 15, 2018"
 output: pdf_document
 ---
@@ -22,6 +22,17 @@ if(grepl("nora", wd)) {
 rm(wd)
 
 ```
+
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+      
+ \textbf{$\rightarrow$} First of all, we want to note that we did \textbf{not find} the  mentioned corrected dataset in \texttt{El Raco}, and as such we have used the one in the package MASS, which does not have the corrected version of MEDV. 
+ 
+ Because of this, we will be using \textbf{MEDV} as our \textbf{target variable}.
+
+    }%
+}
+
 
 # 1. Lasso for the Boston Housing Area
 ```{r results=FALSE}
@@ -49,7 +60,6 @@ for (l in 1:n.lambdas){
 
 ## 1.1.  For the Boston House-price corrected dataset use Lasso estimation (in glmnet) to fit the regression model where the response is CMEDV (the corrected version of MEDV) and the explanatory variables are the remaining 13 variables in the previous list. Try to provide an interpretation to the estimated model.
 
-**$\rightarrow$** First of all, we want to note that we did not find the  mentioned corrected dataset in `El Raco`, and as such we have used the one in the package _MASS_, which does not have the corrected version of MEDV. Because of this, we will be using MEDV as our target variable.
 
 ```{r}
 m1.lasso <- glmnet(X, Y, lambda=lambda.v)
@@ -61,14 +71,8 @@ plot(log(m1.lasso$lambda), m1.lasso$dev.ratio, type='b')
 abline(v=minLambda,col=2,lty=2)
 ```
 
-TODO Sergi: Caldria computar el lambda minim + sd per saber quin valor agafar
-
-TODO Laura: Algo com lo de dalt?
-
 
 ### Interpretation
-
-TODO: Check this. Anything else to add? On the second plot, for example...
 
 
 In the plot above, each colored line is a different coefficient value in our model.
