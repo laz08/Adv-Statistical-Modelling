@@ -27,8 +27,6 @@ source("spam.R")
 # Preparing the data
 
 ```{r}
-totalNumObs = nrow(spam)
-
 mail.spam = spam[which(spam$spam.01 == 1), ]
 mail.non.spam = spam[which(spam$spam.01 == 0), ]
 
@@ -77,7 +75,7 @@ true.val.spam <- val.set$spam.01
 
 ```{r}
 log.reg.fit <- glm(spam.01 ~ ., data=sc.train.set, family = binomial(link = "logit"))
-y.pred <- predict(log.reg.fit, sc.val.set, type="response")
+y.pred <- predict.glm(log.reg.fit, sc.val.set, type="response")
 y.pred <- ifelse(y.pred >= 0.5,1,0)
 
 head(y.pred)
@@ -102,6 +100,17 @@ abline(0, 1) #add a 45 degree line
 
 
 ## Logistic regression fitted by LASSO
+
+```{r}
+sc.train.set[, 58] <- as.numeric(sc.train.set[, 58])
+logit.lasso = cv.glmnet(as.matrix(sc.train.set[, 1:57]), as.factor(sc.train.set[, 58]), alpha=1, family="binomial", standardize = FALSE)
+
+predict(logit.lasso, as.matrix(sc.val.set), type="response")
+#y.pred2 <- predict.glmnet(x=logit.lasso, y=as.matrix(sc.val.set), s=c(logit.lasso$lambda.min), type="response")
+head(y.pred2); summary(y.pred2)
+
+plot(logit.lasso,  xvar="lambda")
+```
 
 ## K-NN binary regression
 
