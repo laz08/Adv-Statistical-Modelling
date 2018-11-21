@@ -10,7 +10,6 @@ library("data.table")
 library("knitr")
 library("glmnet")
 library("caret")
-library("pROC")
 library("ROCR")    
 ```
 
@@ -44,28 +43,23 @@ train.prop.no.spam = 2*nrow(mail.non.spam)/3
 non.spam.training = mail.non.spam[1:train.prop.no.spam,]
 non.spam.val = mail.non.spam[train.prop.no.spam:nrow(mail.non.spam),]
 
-
 ## Merging
 
 train.set = rbind(spam.training, non.spam.training)
 val.set = rbind(spam.val, non.spam.val)
-
+train.set$spam.01 <-  as.factor(train.set$spam.01)
+val.set$spam.01 <-  as.factor(val.set$spam.01)
 
 ## Scaling and centering
-train.set.spam <- train.set[, 58]
-sc.train.set <- scale(train.set[, 1:57])
-sc.train.set <- data.frame(sc.train.set, "spam.01" = as.factor(train.set.spam))
 
-
-mat.train.set <- as.matrix(train.set)
-mean.train.set <- mean(mat.train.set)
-sd.train.set <- sd(mat.train.set)
+x.train <- as.matrix(train.set[, 1:57])
+y.train <- as.factor(train.set$spam.01)
 
 # Scale validation set
-sc.val.set <- (val.set[, 1:57] - mean.train.set)/sd.train.set
-sc.val.set <- as.data.frame(sc.val.set)
-colnames(sc.val.set) <- names(sc.train.set[, 1:57])
-true.val.spam <- val.set$spam.01
+x.val <- as.matrix(val.set[, 1:57])
+y.val <- as.factor(val.set$spam.01)
+
+table(y.val)
 
 ```
 
@@ -74,24 +68,27 @@ true.val.spam <- val.set$spam.01
 ## Logistic regression fitted by maximum likelihood.
 
 ```{r}
-log.reg.fit <- glm(spam.01 ~ ., data=sc.train.set, family = binomial(link = "logit"))
-y.pred <- predict.glm(log.reg.fit, sc.val.set, type="response")
-y.pred <- ifelse(y.pred >= 0.5,1,0)
 
-head(y.pred)
-
+m1 <- glm(spam.01 ~ .,data=train.set, family=binomial)
+## you don't need to worry about this warning.  
+## It says that some covariates are nearly perfect predictors.
+plot(m1$fit~train.set$spam.01, 
+     xlab="", ylab=c("fitted probability of spam"), 
+     col=c("navy","red"))
+y.pred <- predict(m1, as.data.frame(x.val), type="response")
 summary(y.pred)
-plot(log.reg.fit)
 
-# Confusion matrix
-cm = confusionMatrix(data = as.factor(y.pred), as.factor(true.val.spam))
+y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
+table(y_pred_num)
+
+cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
 cm$table
 cm$byClass
 cm$overall
 
-auc(true.val.spam, y.pred)
+#auc(val.set$spam.01, y.pred)
 
-pred <- prediction(y.pred, true.val.spam)    
+pred <- prediction(y.pred, val.set$spam.01)    
 perf <- performance(pred, measure = "tpr", x.measure = "fpr")     
 plot(perf, col=rainbow(7), main="ROC curve", xlab="Specificity", 
      ylab="Sensitivity")    
@@ -102,14 +99,16 @@ abline(0, 1) #add a 45 degree line
 ## Logistic regression fitted by LASSO
 
 ```{r}
-sc.train.set[, 58] <- as.numeric(sc.train.set[, 58])
-logit.lasso = cv.glmnet(as.matrix(sc.train.set[, 1:57]), as.factor(sc.train.set[, 58]), alpha=1, family="binomial", standardize = FALSE)
+m2 <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE, nfolds=10)
+plot(m2)
+#m2 <- glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE)
+y.pred <- predict(m2, x.val, type="response")
+y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
 
-predict(logit.lasso, as.matrix(sc.val.set), type="response")
-#y.pred2 <- predict.glmnet(x=logit.lasso, y=as.matrix(sc.val.set), s=c(logit.lasso$lambda.min), type="response")
-head(y.pred2); summary(y.pred2)
-
-plot(logit.lasso,  xvar="lambda")
+cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
+cm$table
+cm$byClass
+cm$overall
 ```
 
 ## K-NN binary regression
