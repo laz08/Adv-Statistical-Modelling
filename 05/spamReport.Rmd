@@ -10,8 +10,8 @@ library("data.table")
 library("knitr")
 library("glmnet")
 library("caret")
-# caret package 
-# confusionMatrix(data = predict_svm_test_5, test_td$UpSell_Ind)
+library("pROC")
+library("ROCR")    
 ```
 
 # Introduction
@@ -87,7 +87,17 @@ plot(log.reg.fit)
 
 # Confusion matrix
 cm = confusionMatrix(data = as.factor(y.pred), as.factor(true.val.spam))
+cm$table
+cm$byClass
+cm$overall
 
+auc(true.val.spam, y.pred)
+
+pred <- prediction(y.pred, true.val.spam)    
+perf <- performance(pred, measure = "tpr", x.measure = "fpr")     
+plot(perf, col=rainbow(7), main="ROC curve", xlab="Specificity", 
+     ylab="Sensitivity")    
+abline(0, 1) #add a 45 degree line
 ```
 
 
