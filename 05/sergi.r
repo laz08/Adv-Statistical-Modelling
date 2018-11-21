@@ -1,6 +1,10 @@
 library("data.table")
 library("glmnet")
 
+library("glmnet")
+library("caret")
+library("pROC")
+library("ROCR") 
 spam <- read.table("spambase/spambase.data",sep=",")
 
 spam.names <- c(read.table("spambase/spambase.names",sep=":",skip=33,nrows=53,as.is=TRUE)[,1],
@@ -46,21 +50,48 @@ non.spam.val = mail.non.spam[train.prop.no.spam:nrow(mail.non.spam),]
 
 train.set = rbind(spam.training, non.spam.training)
 val.set = rbind(spam.val, non.spam.val)
-
+train.set$spam.01 <-  as.factor(train.set$spam.01)
+val.set$spam.01 <-  as.factor(val.set$spam.01)
 
 ## Scaling and centering
-sc.train.set <- scale(train.set[, 1:57])
-x.train <- as.matrix(sc.train.set)
-y.train <- as.matrix(train.set[, 58])
 
-
-mat.train.set <- as.matrix(train.set)
-mean.train.set <- mean(mat.train.set)
-sd.train.set <- sd(mat.train.set)
+x.train <- as.matrix(train.set[, 1:57])
+y.train <- as.factor(train.set$spam.01)
 
 # Scale validation set
-x.val <- (val.set[, 1:57] - mean.train.set)/sd.train.set
-y.val <- as.matrix(val.set$spam.01)
+x.val <- as.matrix(val.set[, 1:57])
+y.val <- as.factor(val.set$spam.01)
 
-log.reg.fit <- glm(spam.01 ~ ., data=train.set)
-y.pred <- predict(log.reg.fit, x.val)
+table(y.val)
+
+m1 <- glm(spam.01 ~ .,data=train.set, family=binomial)
+## you don't need to worry about this warning.  
+## It says that some covariates are nearly perfect predictors.
+
+plot(m1$fit~train.set$spam.01, 
+     xlab="", ylab=c("fitted probability of spam"), 
+     col=c("navy","red"))
+
+y.pred <- predict(m1, as.data.frame(x.val), type="response")
+summary(y.pred)
+
+y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
+table(y_pred_num)
+plot(1:length(y.val), y.val, col="red")
+points(1:length(y.val), y_pred_num, col="blue")
+
+cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
+cm$table
+cm$byClass
+cm$overall
+
+m2 <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE, nfolds=10)
+plot(m2)
+#m2 <- glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE)
+y.pred <- predict(m2, x.val, type="response")
+y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
+
+cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
+cm$table
+cm$byClass
+cm$overall
