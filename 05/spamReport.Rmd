@@ -62,7 +62,8 @@ sd.train.set <- sd(mat.train.set)
 
 # Scale validation set
 sc.val.set <- (val.set[, 1:57] - mean.train.set)/sd.train.set
-colnames(sc.val.set) <- names(sc.train.set)[57]
+sc.val.set <- as.data.frame(sc.val.set)
+colnames(sc.val.set) <- names(sc.train.set[, 1:57])
 true.val.spam <- val.set$spam.01
 
 ```
@@ -73,7 +74,7 @@ true.val.spam <- val.set$spam.01
 
 ```{r}
 log.reg.fit <- glm(spam.01 ~ ., data=sc.train.set)
-y.pred <- predict(log.reg.fit, as.data.frame(sc.val.set))
+y.pred <- predict(log.reg.fit, sc.val.set)
 ```
 
 
