@@ -9,6 +9,9 @@ output: pdf_document
 library("data.table")
 library("knitr")
 library("glmnet")
+library("caret")
+# caret package 
+# confusionMatrix(data = predict_svm_test_5, test_td$UpSell_Ind)
 ```
 
 # Introduction
@@ -53,7 +56,7 @@ val.set = rbind(spam.val, non.spam.val)
 ## Scaling and centering
 train.set.spam <- train.set[, 58]
 sc.train.set <- scale(train.set[, 1:57])
-sc.train.set <- data.frame(sc.train.set, "spam.01" = train.set.spam)
+sc.train.set <- data.frame(sc.train.set, "spam.01" = as.factor(train.set.spam))
 
 
 mat.train.set <- as.matrix(train.set)
@@ -73,8 +76,18 @@ true.val.spam <- val.set$spam.01
 ## Logistic regression fitted by maximum likelihood.
 
 ```{r}
-log.reg.fit <- glm(spam.01 ~ ., data=sc.train.set)
-y.pred <- predict(log.reg.fit, sc.val.set)
+log.reg.fit <- glm(spam.01 ~ ., data=sc.train.set, family = binomial(link = "logit"))
+y.pred <- predict(log.reg.fit, sc.val.set, type="response")
+y.pred <- ifelse(y.pred >= 0.5,1,0)
+
+head(y.pred)
+
+summary(y.pred)
+plot(log.reg.fit)
+
+# Confusion matrix
+cm = confusionMatrix(data = as.factor(y.pred), as.factor(true.val.spam))
+
 ```
 
 
