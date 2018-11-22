@@ -50,12 +50,9 @@ val.set = rbind(spam.val, non.spam.val)
 train.set$spam.01 <-  as.factor(train.set$spam.01)
 val.set$spam.01 <-  as.factor(val.set$spam.01)
 
-## Scaling and centering
-
 x.train <- as.matrix(train.set[, 1:57])
 y.train <- as.factor(train.set$spam.01)
 
-# Scale validation set
 x.val <- as.matrix(val.set[, 1:57])
 y.val <- as.factor(val.set$spam.01)
 
@@ -101,6 +98,7 @@ There a few thing we want to point out from this code, the first one is that sin
 Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy, moreover it is more interesting to look at the rate of badily classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. From the table we can clearly see how __COM ES CALCULAVA AIXO?__.
 
 We have also calculated the ROC curve, which gives a general idea of how good the model is. It does indeed show that we have a pretty good model.
+
 ## Logistic regression fitted by LASSO
 
 ```{r}
