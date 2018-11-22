@@ -14,16 +14,27 @@ library("ROCR")
 ```
 
 # Introduction
+In this delivery we are asked to use the spam dataset and create three different models that are able to classify email according to their contents and metrics related to them. The classifying results on determining whether the email is spam or not.
 
+The models to create are:
 
+- Logistic regression fitted by maximum likelihood.
+- Logistic regression fitted by Lasso.
+- k-nn binary regression.
 
 # Reading the data
+
+We'll start with reading the data.
 ```{r}
 source("spam.R")
 ```
 
 
 # Preparing the data
+
+Having read it, let's split it so that 2/3 are training data and 1/3 is used for validation.
+
+To ensure there is diversity in the training model and validation one to test as many cases as possible, we will use 2/3 of the spam email and 2/3 of the non-spam as the training set. The 1/3 resting of spam and non-spam will be used as validation.
 
 ```{r}
 mail.spam = spam[which(spam$spam.01 == 1), ]
@@ -59,9 +70,12 @@ y.val <- as.factor(val.set$spam.01)
 table(y.val)
 ```
 
+Once we have prepared the data into the validation and training dataset we can proceed onto the classification rules.
+
+
 # Classification rules
 
-With the different sets of data created we can now procede to the creation of the differnet models, we will start using the standar _glm_ model. The model is pretty simple, we will try to predict the value of _spam.01_, it is important to note that we are setting the parameter __family__ to _binomial_ since this is the distribution of our response. We can also see how the method produces an error, this is normal since it simply says that the covariates are nearly perfect predictors.
+We will start using the standard _glm_ model. The model is pretty simple, we will try to predict the value of _spam.01_, it is important to note that we are setting the parameter __family__ to _binomial_ since this is the distribution of our response. We can also see how the method produces an error, this is normal since it simply says that the covariates are nearly perfect predictors.
 
 ## Logistic regression fitted by maximum likelihood.
 
@@ -80,9 +94,7 @@ y_pred_num <- ifelse(y.pred < 0.5, 0, 1) # Convert values to 0 and 1
 table(y_pred_num)
 
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
-cm$table
-cm$byClass
-cm$overall
+cm
 
 #auc(val.set$spam.01, y.pred)
 
@@ -95,7 +107,17 @@ abline(0, 1) #add a 45 degree line
 
 There a few thing we want to point out from this code, the first one is that since the prediction model does not return 0s or 1s (as expected), we must convert these values to 0s and 1s ourselves, for this case any predicted value equal or higher than 0.5 will become a 1 and a 0 if lower.
 
-Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy, moreover it is more interesting to look at the rate of badily classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. From the table we can clearly see how __COM ES CALCULAVA AIXO?__.
+Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy, moreover it is more interesting to look at the rate of badily classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. Let's take a look at the confusion matrix:
+
+```{r}
+kable(cm$table)
+```
+
+Being the columns those of the reference, and the rows those of the prediction, we can see that there have been 128 false positives.
+
+Thus, the false positive rate is: $$\frac{FP}{FP + TN} = \frac{128}{128+802} = 0,13$$
+
+The ratio is not that high so our model actually works quite well.
 
 We have also calculated the ROC curve, which gives a general idea of how good the model is. It does indeed show that we have a pretty good model.
 
@@ -109,9 +131,7 @@ y.pred <- predict(m2, x.val, type="response")
 y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
 
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
-cm$table
-cm$byClass
-cm$overall
+cm
 ```
 
 ## K-NN binary regression
