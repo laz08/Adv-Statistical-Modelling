@@ -10,7 +10,10 @@ library("data.table")
 library("knitr")
 library("glmnet")
 library("caret")
-library("ROCR")    
+library("ROCR")  
+library("class")
+
+set.seed(123)
 ```
 
 # Introduction
@@ -25,7 +28,7 @@ The models to create are:
 # Reading the data
 
 We'll start with reading the data.
-```{r}
+```{r warning=FALSE}
 source("spam.R")
 ```
 
@@ -75,7 +78,9 @@ Once we have prepared the data into the validation and training dataset we can p
 
 # Classification rules
 
-We will start using the standard _glm_ model. The model is pretty simple, we will try to predict the value of _spam.01_, it is important to note that we are setting the parameter __family__ to _binomial_ since this is the distribution of our response. We can also see how the method produces an error, this is normal since it simply says that the covariates are nearly perfect predictors.
+We will start using the standard _glm_ model. The model is pretty simple, we will try to predict the value of _spam.01_.
+
+It is important to note that we are setting the parameter __family__ to _binomial_ since this is the distribution of our response. We can also see how the method produces a warning. This is normal since it simply says that the covariates are nearly perfect predictors.
 
 ## Logistic regression fitted by maximum likelihood.
 
@@ -105,9 +110,10 @@ plot(perf, col=rainbow(7), main="ROC curve", xlab="Specificity",
 abline(0, 1) #add a 45 degree line
 ```
 
-There a few thing we want to point out from this code, the first one is that since the prediction model does not return 0s or 1s (as expected), we must convert these values to 0s and 1s ourselves, for this case any predicted value equal or higher than 0.5 will become a 1 and a 0 if lower.
+There a few thing we want to point out from this code, the first one is that since the prediction model does not return 0s or 1s (as expected), we must convert these values to 0s and 1s ourselves, for this case any predicted value equal or higher than 0.5 will become a 1 and a 0 if lower. 
 
-Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy, moreover it is more interesting to look at the rate of badily classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. Let's take a look at the confusion matrix:
+
+Once we have the values converted to the appropiate values we can check how good our model is. As we can see we can obtain a pretty good model with a total of _0.865_ accuracy. Moreover it is very interesting to look at the rate of badly classified non spam emails, since it is quite important that it is as low as possible, due to not wanting to classify normal emails as spam, which is more important than classifing spammy emails as normal ones. Let's take a look at the confusion matrix:
 
 ```{r}
 kable(cm$table)
@@ -136,6 +142,21 @@ cm
 
 ## K-NN binary regression
 
+```{r}
+#knnResults <- kNN(spam.01 ~ ., train.set, val.set, k=5, prob)
+#table(val.set[,'spam.01'],knnResults)
+
+
+knn.mod <- knn(train.set, val.set, train.set[,58], k = 5, prob = TRUE)
+prob <- as.numeric(knn.mod)
+
+pred_knn <- prediction(prob, val.set[,58])
+knn.perf <- performance(pred_knn, "tpr", "fpr")
+plot(knn.perf, avg= "threshold", colorize=T, lwd=3, main="kNN ROC curve")
+
+knn.auc <- performance(pred_knn, "auc")
+cat("AUC: ", knn.auc@y.values[[1]], "\n")
+```
 
 <!-- For each rule, state the missclassifcation rate and so on.
 
