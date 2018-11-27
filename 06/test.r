@@ -39,7 +39,9 @@ summary(est.x)
 # How close is our estimator
 points(Yr, est.y, col="red", type='l', lwd=3)
 # How differnet is our error
-plot(m1$x, m1$y + 1.96*sqrt(est.y), col="blue", type='l', lwd=2) # Check this bc wtf is this plot maybe I understood it wrong
+plot(m1$x, m1$y - 1.96*sqrt(est.y), col="blue", type='l', lwd=2, xlim=c(0,100), ylim=c(6,12)) # Check this bc wtf is this plot maybe I understood it wrong
+points(m1$x, m1$y + 1.96*sqrt(est.y), col="blue", type='l', lwd=2) # Check this bc wtf is this plot maybe I understood it wrong
+
 points(Yr, lgWeight)
 points(m1, col="red", type='l', lwd=4)
 legend("topleft", c("expectation", "data", "model"), col=c("blue", "black", "red"), pch=15)
