@@ -101,13 +101,14 @@ table(y_pred_num)
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
 cm
 
-#auc(val.set$spam.01, y.pred)
-
 pred <- prediction(y.pred, val.set$spam.01)    
 perf <- performance(pred, measure = "tpr", x.measure = "fpr")     
 plot(perf, col=rainbow(7), main="ROC curve", xlab="Specificity", 
      ylab="Sensitivity")    
 abline(0, 1) #add a 45 degree line
+
+glm.auc <- performance(pred, "auc")
+cat("AUC: ", glm.auc@y.values[[1]], "\n")
 ```
 
 There a few thing we want to point out from this code, the first one is that since the prediction model does not return 0s or 1s (as expected), we must convert these values to 0s and 1s ourselves, for this case any predicted value equal or higher than 0.5 will become a 1 and a 0 if lower. 
@@ -132,12 +133,23 @@ We have also calculated the ROC curve, which gives a general idea of how good th
 ```{r}
 m2 <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE, nfolds=10)
 plot(m2)
-#m2 <- glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE)
+
 y.pred <- predict(m2, x.val, type="response")
 y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
 
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
 cm
+
+
+pred.log.reg <- prediction(y.pred, val.set$spam.01)    
+perf.log.reg <- performance(pred.log.reg, measure = "tpr", x.measure = "fpr")     
+plot(perf.log.reg, col=rainbow(7), main="ROC curve", xlab="Specificity", 
+     ylab="Sensitivity")    
+abline(0, 1) #add a 45 degree line
+
+log.reg.auc <- performance(pred.log.reg, "auc")
+cat("AUC: ", log.reg.auc@y.values[[1]], "\n")
+
 ```
 
 ## K-NN binary regression
@@ -156,9 +168,50 @@ plot(knn.perf, avg= "threshold", colorize=T, lwd=3, main="kNN ROC curve")
 
 knn.auc <- performance(pred_knn, "auc")
 cat("AUC: ", knn.auc@y.values[[1]], "\n")
+
+cm.knn = as.matrix(table(Actual = val.set[, 58], Predicted = prob))
+knn.acc <- sum(diag(cm.knn))/length(prob)
 ```
 
 <!-- For each rule, state the missclassifcation rate and so on.
 
 Optional:  Compute the confussion table + ROC + AUC -->
 
+
+# Models comparison
+
+
+To summarize and conclude, let's compare the models.
+
+
+```{r}
+aucs <- c(glm.auc@y.values[[1]], log.reg.auc@y.values[[1]], knn.auc@y.values[[1]])
+names <- c("GLM", "Log. reg.", "kNN")
+
+auc.df <- data.table(Model=names, AUC=aucs)
+kable(auc.df)
+```
+
+
+From the Area Under the Curve we can see that GLM and Logistic regression fit the model well. However, in the case of kNN, the area under the curve is way below those two other models, so does not seem as fitting as the other two.
+
+This can also be seen if we take a look at the ROC curves plots on each model.
+
+
+Now if we take a look at the accuracies of each model we can also see that the kNN has a way lower value. GLM has, again, a slightly greater value than kNN.
+
+```{r}
+acc <- c(0.8645, 0.8573, knn.acc)
+
+auc.df <- data.table(Model=names, Accuracy=acc)
+kable(auc.df)
+```
+
+
+## Conclusion
+
+So having seen all these methods, using the same training and validations set, we could say that the best model to predict whether an email is spam or not using the input metrics, is to use the GLM model or the logistic regression one.
+
+Using kNN is not recommended from our point of view. Not only it has low accuracy but also has a higher false positive rate than the other two.
+
+Thus, we advise using GLM, for we have obtained the best results with it.
