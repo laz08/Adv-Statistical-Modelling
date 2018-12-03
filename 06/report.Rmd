@@ -1,4 +1,11 @@
-```{r}
+---
+title: "ASM -  Local polynomial regression"
+author: "Sergi Carol, Laura Cebollero, Alex Rodriguez"
+date: "21st November, 2018"
+output: pdf_document
+---
+
+```{rsetup, include=FALSE}
 library(KernSmooth)
 library(sm)
 library(esquisse)
@@ -8,7 +15,12 @@ attach(aircraft)
 
 source("locpolreg.R")
 
+```
 
+# Introduction
+In this deliverable we will perform some calculation in order to estimate the conditional variance on a local polynomial regression model. In this case we will use data from different aircrafts over the years, mainly focusing on how does the _weight_ of the aircrafts change over the years. Due to the difference in scale of the raw weight data we will beging by transforming the __weight__ attribute into logarithmic scale.
+
+```{r}
 lgWeight <- log(Weight)
 ```
 
