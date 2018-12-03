@@ -5,7 +5,7 @@ date: "21st November, 2018"
 output: pdf_document
 ---
 
-```{rsetup, include=FALSE}
+```{r setup, include=FALSE}
 library(KernSmooth)
 library(sm)
 library(esquisse)
@@ -18,12 +18,16 @@ source("locpolreg.R")
 ```
 
 # Introduction
-In this deliverable we will perform some calculation in order to estimate the conditional variance on a local polynomial regression model. In this case we will use data from different aircrafts over the years, mainly focusing on how does the _weight_ of the aircrafts change over the years. Due to the difference in scale of the raw weight data we will beging by transforming the __weight__ attribute into logarithmic scale.
+In this deliverable we will perform some calculation in order to estimate the conditional variance on a local polynomial regression model. In this case we will use data from different aircrafts over the years, mainly focusing on how does the _weight_ of the aircrafts change over the years.
+
+
+Due to the difference in scale of the raw weight data we will begin by transforming the __weight__ attribute into logarithmic scale.
 
 ```{r}
 lgWeight <- log(Weight)
 ```
 
+To compute the best bandwidth we have created the function below which computes the mean of the 4 methods we are using to compute an adequate bandwidth.
 
 ```{r}
 source("functions.R")
@@ -45,33 +49,74 @@ choose.best.bw <- function(x, y){
 }
 ```
 
+## 1. Fitting non-parametric regression data (x, y)
+
+We will begin by simply plotting the Yr against the weight with logarithmic scale.
+
+```{r}
+plot(Yr, lgWeight)
+```
+We can see points somewhat follow a curved line, specially on the bottom left of the plot. On the right part of it the plots are more dispersed so visually we are not able to imagine accurately what logistic polynomic regression could fit this data.
+
+Let's compute the regression line using the locpoly method and choosing the best bandwidth with the previously mentioned function we have implemented.
+
 ```{r}
 plot(Yr, lgWeight)
 
-# bw <- bw.chooser(Yr, lgWeight)
 bw <- choose.best.bw(Yr, lgWeight)
 m1 <- locpoly(Yr, lgWeight, bandwidth = bw, degree=1, drv=0, gridsize = length(Yr))
 points(m1, col="red", type='l', lwd=3)
+```
+We can see how the line above could be, at least visually, an adequate representation on what trend the data may follow.
 
+## 2. Estimated residuals & transformation
+Now let's proceed onto computing the Estimated residuals of such polynomic regression:
+```{r}
 e <- lgWeight - m1$y
 summary(e)
 # Error compared to our data
 plot(Yr, e^2)
+```
+We can see how most of the residuals are close to 0 along all the years and only a few have higher values, between 4 and 12.
+
+Let's transform the estimated residuals:
+```{r}
 z <- log(e^2)
-
 summary(z)
-
 z[is.infinite(z)] <- 0 # Last value is infinite so we better change it to 0
+```
 
+## 3. Fitting non-parametric regression data (x, z)
+
+Now, we are going to fit the non parametric regression data with the new computed transformed residual.
+
+```{r}
 # Choose Bandwidth
 bw <- choose.best.bw(Yr, z)
 q <- locpoly(Yr, z,  bandwidth = bw, degree=1, drv=0, gridsize = length(Yr)) 
 est.y <- exp(q$y)
-est.x <- exp(q$x)
 summary(est.y)
-summary(est.x)
+
 # How close is our estimator
+plot(Yr, e^2)
 points(Yr, est.y, col="red", type='l', lwd=3)
+```
+We can see how the estimatd polynomic regression fits the transformed residuals.
+
+
+## 4. Standard deviation estimation
+
+Finally, let's estimate the standard deviation.
+```{r}
+est.x <- exp(q$x)
+summary(est.x)
+```
+We can see how it varies a lot on the weight scale.
+
+
+Let's see how this standard deviation plots against the real data and with which margin our predictions are fit and may vary:
+
+```{r}
 # How differnet is our error
 plot(m1$x, m1$y - 1.96*sqrt(est.y), col="blue", type='l', lwd=2, xlim=c(15,90), ylim=c(6,12)) # Check this bc wtf is this plot maybe I understood it wrong
 points(m1$x, m1$y + 1.96*sqrt(est.y), col="blue", type='l', lwd=2) # Check this bc wtf is this plot maybe I understood it wrong
@@ -79,7 +124,6 @@ points(m1$x, m1$y + 1.96*sqrt(est.y), col="blue", type='l', lwd=2) # Check this 
 points(Yr, lgWeight)
 points(m1, col="red", type='l', lwd=4)
 legend("topleft", c("expectation", "data", "model"), col=c("blue", "black", "red"), pch=15)
-
 ```
 
-
+We can see as we commented on the first section how the standard deviation is greater on the right side of the plot because the points are more scattered, whereas on the left side of the plot they are near the same area.
