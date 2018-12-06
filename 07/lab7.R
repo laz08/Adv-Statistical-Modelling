@@ -1,4 +1,5 @@
 library(sm)
+library(readr)
 
 h.cv.sm.poisson <- function(x,y,rg.h=NULL,l.h=10,method=loglik.CV){
   cv.h <- numeric(l.h)
@@ -27,3 +28,11 @@ loglik.CV <- function(x,y,h){
                  },   x,y,h)
   return(-sum( y*log(pred/(1-pred)) + log(1-pred) )/n)
 }
+
+countries <- na.omit(read_table2("countries.csv"))
+summary(countries)
+head(countries)
+attach(countries)
+le.fm.0 <- pmax(0,le.fm)
+
+plot(le.fm.0, life.exp.f)
