@@ -20,7 +20,7 @@ if(grepl("nora", wd)) {
 } else {
     # Set Sergi & Alex dirs
 }
-rm(wd)
+  rm(wd)
 
 #######################
 # 1./
@@ -51,8 +51,11 @@ loglik.CV <- function(x,y,h){
                    function(i,x,y,h){
                        sm.poisson(x=x[-i],y=y[-i],h=h,eval.points=x[i],display="none")$estimate
                    },   x,y,h)
-    
-    return(sum(log(exp(-pred) * ((pred**y)/factorial(y))))/n)
+    total_sum = 0
+    for (i in 1:n){
+      total_sum = total_sum + (log((exp(-pred[i]) * ((pred[i]**y[i])/factorial(y[i])))^-i))/n
+    }
+    return(total_sum)
 }
 
 # 2./ 
@@ -65,9 +68,12 @@ attach(countries)
 le.fm.0 <- pmax(0,le.fm)
 
 # Values we want to model to
-plot(le.fm.0, life.exp)
+plot(life.exp, le.fm.0)
 
 h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=c(4, 30),method=loglik.CV)
 
 plot(h.CV.loglik$h,h.CV.loglik$cv.h)
 lines(h.CV.loglik$h,h.CV.loglik$cv.h)
+
+m1 <- sm.poisson(life.exp, le.fm.0, h=h.CV.loglik$h)
+
