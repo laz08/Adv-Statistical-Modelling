@@ -1,6 +1,30 @@
-library(sm)
-library(readr)
+rm(list = ls())
 
+# Load and install necessary packages
+requiredPackages <- c("sm", "readr")
+
+for (pac in requiredPackages) {
+    if(!require(pac,  character.only=TRUE)){
+        install.packages(pac, repos="http://cran.rstudio.com")
+        library(pac,  character.only=TRUE)
+    } 
+}
+rm(pac)
+rm(requiredPackages)
+
+
+# Set WD and load data
+wd = getwd()
+if(grepl("nora", wd)) {
+    setwd("~/Documents/18-19/ASM/HW/07")
+} else {
+    # Set Sergi & Alex dirs
+}
+rm(wd)
+
+#######################
+# 1./
+# 
 h.cv.sm.poisson <- function(x,y,rg.h=NULL,l.h=10,method=loglik.CV){
   cv.h <- numeric(l.h)
   if (is.null(rg.h)){
@@ -19,20 +43,31 @@ h.cv.sm.poisson <- function(x,y,rg.h=NULL,l.h=10,method=loglik.CV){
               h.cv = gr.h[which.min(cv.h)]))
 }
 
+
 # method loglik.CV: leave-one-out log-likelihood 
 loglik.CV <- function(x,y,h){
-  n <- length(x)
-  pred <- sapply(1:n, 
-                 function(i,x,y,h){
-                   sm.poisson(x=x[-i],y=y[-i],h=h,eval.points=x[i],display="none")$estimate
-                 },   x,y,h)
-  return(-sum( y*log(pred/(1-pred)) + log(1-pred) )/n)
+    n <- length(x)
+    pred <- sapply(1:n, 
+                   function(i,x,y,h){
+                       sm.poisson(x=x[-i],y=y[-i],h=h,eval.points=x[i],display="none")$estimate
+                   },   x,y,h)
+    
+    return(sum(log(exp(-pred) * ((pred**y)/factorial(y))))/n)
 }
 
+# 2./ 
 countries <- na.omit(read_table2("countries.csv"))
 summary(countries)
 head(countries)
 attach(countries)
+
+
 le.fm.0 <- pmax(0,le.fm)
 
-plot(le.fm.0, life.exp.f)
+# Values we want to model to
+plot(le.fm.0, life.exp)
+
+h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=c(4, 30),method=loglik.CV)
+
+plot(h.CV.loglik$h,h.CV.loglik$cv.h)
+lines(h.CV.loglik$h,h.CV.loglik$cv.h)
