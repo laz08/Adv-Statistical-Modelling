@@ -70,7 +70,7 @@ le.fm.0 <- pmax(0,le.fm)
 # Values we want to model to
 plot(life.exp, le.fm.0)
 
-h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=c(4, 40),method=loglik.CV)
+h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=c(4, 15),method=loglik.CV)
 
 plot(h.CV.loglik$h,h.CV.loglik$cv.h)
 lines(h.CV.loglik$h,h.CV.loglik$cv.h)

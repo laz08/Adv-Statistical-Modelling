@@ -8,8 +8,6 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-rm(list = ls())
-
 # Load and install necessary packages
 requiredPackages <- c("sm", "readr")
 
@@ -21,6 +19,8 @@ for (pac in requiredPackages) {
 }
 rm(pac)
 rm(requiredPackages)
+
+library("knitr")
 ```
 
 
@@ -77,3 +77,68 @@ Now that we have them implemented we can proceed to use them for data following 
 
 # Local Poisson regression for Country Development data
 
+Let's first load the countries data:
+```{r warning=F}
+countries <- na.omit(read_table2("countries.csv"))
+summary(countries)
+head(countries)
+attach(countries)
+```
+
+Since it contains some missing values we are going to omit them on their reading.
+
+We are asked to predict the `le.fm` variable. However, looking at the summary we can see that it ranges from -1 to 11. Thus, meaning that it contains a negative value.
+
+So a new variable, as suggested is defined such that
+```{r}
+le.fm.0 <- pmax(0,le.fm)
+```
+
+What `pmax` does is return the parallel maxima and minima of the input values, which in this case it is `le.fm`. So we are forcing the minimum value -1 to be a 0, leaving the maximum as it was:
+
+```{r}
+cat("MAXIMUM le was ", max(le.fm)," and now still is", max(le.fm.0) , "\n")
+
+cat("MINIMUM le was ", min(le.fm)," and now is", min(le.fm.0) , "\n")
+```
+
+Now let's proceed onto fitting a local Poisson regression using our functions onto our data.
+
+More specifically, we are going to fit a local Poisson regression modelling our new variable `le.fm.0` as a function of `life.exp`. 
+
+This is the data we want to model:
+```{r}
+plot(life.exp, le.fm.0)
+```
+
+Let's first choose the best bandwidth. To preserve locality, we establish possible h that range from 2 to 15.
+
+```{r}
+range.h = c(2, 15)
+h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=range.h, method=loglik.CV)
+```
+
+```{r}
+plot(h.CV.loglik$h,h.CV.loglik$cv.h)
+lines(h.CV.loglik$h,h.CV.loglik$cv.h)
+```
+
+```{r}
+kable(data.frame(h.CV.loglik$h, h.CV.loglik$cv.h))
+```
+
+We can see how the minimum log-likelihood is found close to 3, so we are going to use that value.
+
+Let's see how our Poisson regression would be using that bandwith:
+```{r}
+chosen.h =  h.CV.loglik$h.cv
+m1 <- sm.poisson(life.exp, le.fm.0, h=chosen.h)
+```
+
+We can see from the plot above how the line fits our data without the line being not smooth. So the optimal bandwith is:
+
+```{r}
+chosen.h
+```
+
+We can see how the regression does not go below 0, as we wanted.
