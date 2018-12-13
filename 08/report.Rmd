@@ -1,0 +1,55 @@
+---
+title: "Splines"
+author: "Sergi Carol Laura Cebollero Alex Rodriguez"
+date: "December 13, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+load("meat.Rdata")
+library(splines)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+The aim of this lab is to understand the spline smoothing effects on regression methods, the lab will consist of two different tasks, the first one will combine the use of a __b-spline__ basis with a liniar model in order to compute the optimal fitting for our data. The second task will use the method __smooth spline__ in order to calculate the optimal fitting. 
+
+### Exercice 1
+
+```{r}
+summary(meat)
+y = log(meat$Fat)
+x = meat$abs.850
+
+# sort data
+sx = sort(x, index.return=T)
+x = sx$x
+y = y[sx$ix]
+
+```
+
+
+You can also embed plots, for example:
+
+```{r}
+k = 3   #Todo: check what happens if degree =1
+
+n.knots = 10
+my.knots <- quantile(x,seq(0,1,length=n.knots))
+inner.knots <- my.knots[-c(1,length(my.knots))] 
+
+
+degrees <- n.knots + k + 1
+```
+### Exercice 2
+
+In this exercice we will use the method smooth spline with the previous calculated degrees of freedom and we will plot the results of both this method and the previous used method in order to compare them.
+```{r}
+m1  <- smooth.spline(x, y, df = degrees)
+plot(x,y)
+lines(m1, col="red")
+lines(x,lm.spl$fitted.values, col="blue")
+
+```
+
