@@ -43,7 +43,7 @@ choose.best.bw <- function(x, y){
   gcv.mean <- mean(cvh.bw[["gcv"]])
   kf.cv.mean <- mean(k.cv.bw[["k.cv"]])
   
-  mean.bw = mean(c(cv.mean, gcv.mean, kf.cv.mean, dpill.bw))
+  mean.bw = mean(c(cv.mean, gcv.mean, kf.cv.mean))
   
   return(mean.bw)
 }

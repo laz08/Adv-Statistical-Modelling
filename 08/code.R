@@ -21,7 +21,10 @@ computeFittedValues <- function(x, n.knots, k, y, x.val) {
   df = n.knots + k + 1 
   basis <- bs(x=x,knots=inner.knots,intercept=T,degree=k, df=df)
   lm.spl <- lm(y~basis-1) # remove intercept
-  res <- predict(lm.spl, newdata=x.val)
+  print(lm.spl)
+  #basis1 <- bs(x=x.val,knots=inner.knots,intercept=T,degree=k, df=df)
+  
+  res <- predict(lm.spl, x.val)
   return(res)
 }
 
@@ -29,12 +32,12 @@ computeFittedValues <- function(x, n.knots, k, y, x.val) {
 f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
   n <- length(x)
   sample <- sample(rep(1:10, length=n), n)
-  k.fold.array = c()
-  for (k in 1:10){
-    X.train <- x[which(sample!=k)]
-    X.val <- data.frame(x=x[which(sample==k)])
-    Y.train <- y[which(sample!=k)]
-    Y.val <- y[which(sample==k)]
+  k.fold.df = data.frame()
+  for (ki in 1:10){
+    X.train <- x[which(sample!=ki)]
+    X.val <- data.frame(x = x[which(sample==ki)])   
+    Y.train <- y[which(sample!=ki)]
+    Y.val <- y[which(sample==ki)]
     
     r.sq.array = c()
     possible.knots = seq(n.knots.range[1], n.knots.range[2])
@@ -45,10 +48,16 @@ f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
     }
     
     data.f = data.frame(possible.knots, r.sq.array)
-    k.fold.array[k] = c(which(min(r.sq.array) == r.sq.array), min(r.sq.array)) 
+    if(k == 1){
+      print(data.f)
+      print(which(min(r.sq.array) == r.sq.array)[1])
+    }
+    minRsq = which(min(r.sq.array) == r.sq.array); minRsq = minRsq[1]
+    k.fold.df = rbind(k.fold.df, c(minRsq, r.sq.array[minRsq])) 
   }
-  print(k.fold.array)
-  return(min(k.fold.array))
+  print(k.fold.df)
+  minIdx = which(min(k.fold.df[, 1]) == k.fold.df[,1])[1]
+  return(k.fold.df[minIdx, 1])
 }
 n.knots.optim = f.10.CV.inner.knots(x, y, 3, c(1, 20))
 print(n.knots.optim)
