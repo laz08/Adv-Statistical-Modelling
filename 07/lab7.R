@@ -75,5 +75,5 @@ h.CV.loglik <- h.cv.sm.poisson(life.exp,le.fm.0 ,rg.h=c(4, 15),method=loglik.CV)
 plot(h.CV.loglik$h,h.CV.loglik$cv.h)
 lines(h.CV.loglik$h,h.CV.loglik$cv.h)
 
-m1 <- sm.poisson(life.exp, le.fm.0, h=h.CV.loglik$h)
+m1 <- sm.poisson(life.exp, le.fm.0, h=h.CV.loglik$h.cv)
 
