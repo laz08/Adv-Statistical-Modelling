@@ -45,7 +45,7 @@ f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
     }
     
     data.f = data.frame(possible.knots, r.sq.array)
-    k.fold.array[k] = c(which(min(r.sq.array) == r.sq.array), min(r.sq.array))
+    k.fold.array[k] = c(which(min(r.sq.array) == r.sq.array), min(r.sq.array)) 
   }
   print(k.fold.array)
   return(min(k.fold.array))
