@@ -40,13 +40,14 @@ plot(log(m2.rr$lambda), m2.rr$dev.ratio, type='b')
 
 
 m3.rr <- cv.glmnet(X, Y, nfolds=10, lambda =  lambda.v, standardize=FALSE, intercept=FALSE, alpha=0)
-plot(m3.rr)
+plot(m3.rr, col=2)
 abline(v=log(m3.rr$lambda.min),col=2,lty=2)
 abline(v=log(m3.rr$lambda.1se),col=2,lty=2)
 cvm <- rev(m3.rr$cvm)
 m4.rr <-  MSPEkfold(X, Y, 10, n.lambdas, lambda.v, n)
 
 points(log(lambda.v), m4.rr, col=5)
+legend("bottomright", c("glmnet error", "k.fold error"), col=c(2,5), lty=c(1,1), lwd=c(0,0))
 
 lambda.glm <- m3.rr$lambda
 df.v.g <- numeric(n.lambdas)
@@ -54,6 +55,6 @@ for (l in 1:n.lambdas){
   lambda <- lambda.glm[l]
   df.v.g[l] <- sum(d2/(d2+lambda)) 
 }
-plot(df.v, m3.rr$cvm, col=1,pch=19,cex=.75)
+plot(df.v, cvm, col=1,pch=19,cex=.75)
 points(df.v, m4.rr,col=8,pch=19,cex=.75)
 

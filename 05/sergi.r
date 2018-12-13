@@ -77,8 +77,6 @@ summary(y.pred)
 
 y_pred_num <- ifelse(y.pred < 0.5, 0, 1)
 table(y_pred_num)
-plot(1:length(y.val), y.val, col="red")
-points(1:length(y.val), y_pred_num, col="blue")
 
 cm = confusionMatrix(data = as.factor(y_pred_num), as.factor(val.set$spam.01))
 cm$table

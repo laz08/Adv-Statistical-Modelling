@@ -23,7 +23,6 @@ MSPEval <- function(X, Y, Xval, Yval, lambda.v, n.lambdas) {
 
 MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
     PMSE.CV <-matrix(nrow = K, ncol=n.lambdas)
-    n <- dim(X)[1]
     folds <- sample(rep(1:K, length=n), n, replace=FALSE) 
     
     MPSE <- data.frame()
@@ -41,7 +40,6 @@ MSPEkfold <- function(X, Y, K, n.lambdas, lambda.v, n) {
         mspe.k.val = MSPEval(Xk, Yk, Xv, Yv, lambda.v, n.lambdas)
         MPSE <- rbind(MPSE, mspe.k.val) 
     }
-    
     MPSE2 <- c()
     for (i in 1:n.lambdas){
         MPSE2 <- append(MPSE2, mean(MPSE[,i]))
@@ -88,4 +86,48 @@ MSPEcvDiagH <- function(X, Y, n, n.lambdas, lambda.v, diag.H.lambda, beta.path){
         hat.Y <- X %*% beta.path[l,]
         PMSE.CV.H.lambda[l] <- sum( ((Y-hat.Y)/(1-diag.H.lambda[l,]))^2 )/n
     }
+}
+
+
+g <- function(X, Y, X.val, Y.val, lambda.v){
+  
+  ## (1) INITIALIZATIONS
+  # Dimension values
+  n <- nrow(X); p <- ncol(X)
+  n.val <- nrow(X.val); 
+  n.lambdas <- length(lambda.v)
+  MSPE <- c()
+  
+  ## (2) COMPUTATION
+  for(l in 1:n.lambdas){
+    beta <- solve(t(X)%*%X + lambda.v[l]*diag(1,p)) %*% t(X) %*% Y
+    y.hat <- X.val %*% beta
+    MSPE[l] <- sum((Y.val - y.hat)^2) / n.val
+  }
+  
+  ## (3) RESULTS
+  return(MSPE)
+}
+
+m <- function(X, Y, lambda.v, K=3){
+  
+  ## (1) INITIALIZATIONS
+  # SAMPLES for K-fold
+  sample <- sample(rep(1:K,length.out=nrow(X)))
+  MSPE <- rep(0, K)
+  
+  # K-dataset creation
+  for(k in 1:K){
+    
+    X.train <- X[which(sample!=k),]
+    X.val <- X[which(sample==k),]
+    Y.train <- Y[which(sample!=k),]
+    Y.val <- Y[which(sample==k),]
+    
+    # Reuse the previously implemented function to calculate the errors for each lambda for the current fold
+    MSPE <- MSPE + g(X.train, Y.train, X.val, Y.val, lambda.v) / K
+  }
+  
+  ## (3) RESULTS
+  return(MSPE)
 }
