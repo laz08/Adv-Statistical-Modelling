@@ -12,9 +12,9 @@ sx = sort(x, index.return=T)
 x = sx$x
 y = y[sx$ix]
 
-k = 3   #Todo: check what happens if degree =1
+k = 3
 
-computeFittedValues <- function(x, n.knots, k, y, x.val) {
+computePredictions <- function(x, n.knots, k, y, x.val) {
   my.knots <- quantile(x$abs,seq(0,1,length=n.knots))
   l = length(my.knots)
   inner.knots <- my.knots[-c(1,l)] 
@@ -40,7 +40,7 @@ f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
     r.sq.array = c()
     possible.knots = seq(n.knots.range[1], n.knots.range[2])
     for(n.knots in possible.knots){
-      fitted.vals = computeFittedValues(X.train, n.knots, k, Y.train, X.val)
+      fitted.vals = computePredictions(X.train, n.knots, k, Y.train, X.val)
       (r.sq = sum(((Y.val - fitted.vals)^2)/length(Y.val)))
       r.sq.array = append(r.sq.array, r.sq)
     }
@@ -53,21 +53,23 @@ f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
   minIdx = which(min(k.fold.df[, 2]) == k.fold.df[,2])[1]
   return(k.fold.df[minIdx, 1])
 }
+
 n.knots.optim = f.10.CV.inner.knots(x, y, 3, c(1, 20))
 print(n.knots.optim)
 x<- data.frame(abs=x)
 data <- cbind(y,x)
-fitted.vals.optim <- lm(y~bs(abs, knots=n.knots.optim,intercept=T,degree=k, df=df), data=data)
+optim.spline <- lm(y~bs(abs, knots=n.knots.optim,intercept=T,degree=k, df=df), data=data)
 
 
-plot(x$abs,y,col=2,xlab="log( life.exp )",ylab="log( inf.mort )")
-lines(x$abs,fitted.vals.optim$fitted.values)
-#abline(v=my.knots,lty=2,col="grey")
+plot(x$abs,y,col=2,xlab="log(Fat)",ylab="abs.850")
+lines(x$abs,optim.spline$fitted.values)
+
 
 degrees = n.knots.optim + k + 1
 
 m1  <- smooth.spline(x$abs, y, df = degrees)
-plot(x$abs,y)
-lines(m1, col="red")
-lines(x$abs,fitted.vals.optim$fitted.values, col="blue")
-
+plot(x$abs,y, xlab="log(Fat)",ylab="abs.850")
+lines(m1, col="red", lwd=2)
+lines(x$abs,optim.spline$fitted.values, col="blue", lwd=2)
+legend("bottomright", legend = c("Cubic Spline", "Smooth-spline"),
+       lty = 1, lwd = 2,col = c("blue", "red"))

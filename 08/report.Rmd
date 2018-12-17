@@ -1,7 +1,7 @@
 ---
 title: "Splines"
 author: "Sergi Carol Laura Cebollero Alex Rodriguez"
-date: "December 13, 2018"
+date: "December 17, 2018"
 output: pdf_document
 ---
 
@@ -15,7 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 The aim of this lab is to understand the spline smoothing effects on regression methods, the lab will consist of two different tasks, the first one will combine the use of a __b-spline__ basis with a liniar model in order to compute the optimal fitting for our data. The second task will use the method __smooth spline__ in order to calculate the optimal fitting. 
 
-### Exercice 1
+### Exercise 1
+
+We are asked to combine the functions bs and lm to estimate `log(Fat)` as a function of `abs.850` with a cubic spline (thus, k = 3).
+
+So we first check the summary of the data and apply a logarithmic scale to `Fat` and sort the data according to `abs.850`:
 
 ```{r}
 summary(meat)
@@ -26,24 +30,17 @@ x = meat$abs.850
 sx = sort(x, index.return=T)
 x = sx$x
 y = y[sx$ix]
-data <- data.frame(abs=x, y=y)
-
 ```
 
-The next step is to establish the number of degrees to use, which we have established to be 3 since is the standard
+
+
+The next step is to establish the number of degrees to use, which we have established to be 3, for we are asked to perform the nonparametric regression with a cubic spline.
+
+To obtain the best number of knots to use with the spline, we have implemented a 10-fold cross-validation to determine it and a function that computes the prediction of values to check how well our model fits the data:
+
 ```{r}
-k = 3   #Todo: check what happens if degree =1
 
-n.knots = 10
-my.knots <- quantile(x,seq(0,1,length=n.knots))
-inner.knots <- my.knots[-c(1,length(my.knots))] 
-
-
-degrees <- n.knots + k + 1
-```
-We have created two function in order to implemented the 10-K Cross-fold validation
-```{r}
-computeFittedValues <- function(x, n.knots, k, y, x.val) {
+computePredictions <- function(x, n.knots, k, y, x.val) {
   my.knots <- quantile(x$abs,seq(0,1,length=n.knots))
   l = length(my.knots)
   inner.knots <- my.knots[-c(1,l)] 
@@ -68,40 +65,66 @@ f.10.CV.inner.knots <- function(x, y, k, n.knots.range) {
     r.sq.array = c()
     possible.knots = seq(n.knots.range[1], n.knots.range[2])
     for(n.knots in possible.knots){
-      fitted.vals = computeFittedValues(X.train, n.knots, k, Y.train, X.val)
+      fitted.vals = computePredictions(X.train, n.knots, k, Y.train, X.val)
       (r.sq = sum(((Y.val - fitted.vals)^2)/length(Y.val)))
       r.sq.array = append(r.sq.array, r.sq)
     }
-    data.f = data.frame(possible.knots, r.sq.array)
     
     minRsq = which(min(r.sq.array) == r.sq.array); minRsq = minRsq[1]
     k.fold.df = rbind(k.fold.df, c(minRsq, r.sq.array[minRsq])) 
   }
+  print(k.fold.df)
   minIdx = which(min(k.fold.df[, 2]) == k.fold.df[,2])[1]
   return(k.fold.df[minIdx, 1])
 }
 ```
 
-```{r warning=FALSE}
-n.knots.optim = f.10.CV.inner.knots(data$abs, data$y, 3, c(1, 20))
-print(n.knots.optim)
+Once we have the function, we use it to compute the best number of nodes. We establish a range of knots to test from 1 to 20.
+```{r setseed, warning=FALSE, echo=FALSE}
+set.seed(123)
 ```
+
+```{r warning=FALSE, dependson="setseed"}
+k = 3  
+n.knots.optim = f.10.CV.inner.knots(x, y, k, c(1, 20))
+
+cat("\n Number of optimum knots: ", n.knots.optim, "\n")
+```
+
+We can see that the best number of knots for our 10-fold CV is 16.
+
+Now we can proceed onto use this number of knots to create a cubic spline to model our data:
 
 ```{r}
 degrees = n.knots.optim + k + 1
-fitted.vals.optim <- lm(y~bs(abs, knots=n.knots.optim,intercept=T,degree=k, df=degrees), data=data)
+x<- data.frame(abs=x)
 
-plot(data$abs,y,col=2,xlab="log( life.exp )",ylab="log( inf.mort )")
-lines(data$abs,fitted.vals.optim$fitted.values)
+data <- cbind(y,x)
+optim.spline <- lm(y~bs(abs, knots=n.knots.optim,intercept=T,degree=k, df=df), data=data)
+
+
+plot(x$abs,y,col=2,xlab="log(Fat)",ylab="abs.850")
+lines(x$abs,optim.spline$fitted.values)
 ```
 
-### Exercice 2
+We can see that with 16 knots, the spline models the data well enough.
 
-In this exercice we will use the method smooth spline with the previous calculated degrees of freedom and we will plot the results of both this method and the previous used method in order to compare them.
+### Exercise 2
+
+In this task we will use the method smooth spline with the previous computed number of effective parameters. We will then plot the results of both this method and the previous used method in order to compare them.
+
 ```{r}
-m1  <- smooth.spline(data$abs, data$y, df = degrees, nknots = n.knots.optim)
-plot(data$abs,y)
-lines(m1, col="red")
-lines(data$abs,fitted.vals.optim$fitted.values, col="blue")
+
+degrees = n.knots.optim + k + 1
+
+m1  <- smooth.spline(x$abs, y, df = degrees)
+plot(x$abs,y, xlab="log(Fat)",ylab="abs.850")
+lines(m1, col="red", lwd=2)
+lines(x$abs,optim.spline$fitted.values, col="blue", lwd=2)
+legend("bottomright", legend = c("Cubic Spline", "Smooth-spline"),
+           lty = 1, lwd = 2,col = c("blue", "red"))
 ```
 
+We can see how the Smooth spline is not, in fact, as smooth as our cubic spline.
+
+Thus, we seem to see that our implementation to find a fitting cubic spline fits the data more smoothly and without overfitting, whereas the Smooth-spline function seems to overfit the data and is more biased based on the present data.
