@@ -1,0 +1,582 @@
+---
+title: 'GAMs 3: Generalized Additive Models'
+author: "Pedro Delicado"
+date: ""
+output:
+  html_notebook: default
+  html_document:
+    number_sections: yes
+  pdf_document:
+    fig_caption: yes
+    number_sections: yes
+subtitle: An Application to Country Development Data
+classoption: a4paper
+---
+<!-- Comment lines are like this one -->
+<!-- Use "\newpage" when you want a new page break in the pdf output  -->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+We are using country development dataset to demonstrate the
+semiparametric model fitting with `gam` function and other related functions from library `mgcv`. 
+
+# Additive Models
+
+## Explaining `inf.mort`.
+
+Use function `gam` from package `mgcv` to fit the following additive models:
+
+* `inf.mort ~ agricul + life.exp`
+* `inf.mort ~ s(agricul) + s(life.exp)`
+* `inf.mort ~ s(agricul, life.exp)`
+* `inf.mort` as a function of `agricul, life.exp.m, life.exp.f`. Combine linear fits, univariate and bivariate nonparametric components.
+
+Use function `anova` to compare the models you fit two by two. Then propose a final model.
+
+
+
+```{r, warning=FALSE, message=FALSE}
+library(mgcv)
+help(package=mgcv)
+help(gam)
+```
+
+Reading countries data set:
+```{r}
+countries<-read.table(file="countries.txt",head=T,row.names=2,dec=",")
+head(countries)
+attach(countries) 
+```
+**Additive Model: inf.mort ~ agricul + life.exp**
+```{r}
+# Linear Model
+am1.0 <- gam(inf.mort ~ agricul + life.exp, data=countries)
+am1.0
+summary(am1.0)
+```
+
+```{r}
+# Additive model 1
+am1.1 <- gam(inf.mort ~ s(agricul) + s(life.exp), data=countries) # We can smooth the values by using s()
+am1.1
+summary(am1.1)
+plot(am1.1,pages=1,residuals=TRUE) # It seems that the life exp mught be linear, yet it seems that agricul is constant so we could try to remove it
+```
+
+**3-D representation of the estimated function** 
+```{r, message=FALSE}
+library(rgl)
+x <- seq(min(agricul),max(agricul), length= 30)
+y <- seq(min(life.exp),max(life.exp), length= 30)
+f <- function(x,y) { r <- predict(am1.1, newdata=data.frame(agricul=x,life.exp=y))}
+z <- outer(x, y, f) # Makes the outer product
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "agricul", ylab = "life.exp", zlab = "inf.mort")
+```
+
+```{r}
+# Additive model 2
+#am1.2 <- gam(inf.mort ~ s(agricul,life.exp), data=countries)
+am1.2 <- gam(inf.mort ~ te(agricul,life.exp), data=countries) # lets use a tensor product to use the gam with2 explanatory variables (good if the scales of the two variables are not the same)
+#am1.2 <- gam(inf.mort ~ ti(agricul,life.exp), data=countries) # ti is a tensor product but the penalty term has an interaction
+am1.2
+summary(am1.2)
+plot(am1.2,pages=1,residuals=TRUE) # Seems like agriculture is near the bottom which means that its less relevant
+plot(am1.2,pages=1,pers=TRUE)
+```
+
+```{r, message=FALSE}
+# 3d estimated function
+library(rgl)
+x <- seq(min(agricul),max(agricul), length= 30)
+y <- seq(min(life.exp),max(life.exp), length= 30)
+f <- function(x,y) { r <- predict(am1.2, newdata=data.frame(agricul=x,life.exp=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "agricul", ylab = "life.exp", zlab = "inf.mort")
+```
+
+```{r}
+# Additive model 3
+am1.3 <- gam(inf.mort ~ s(agricul) + life.exp, data=countries)
+am1.3
+summary(am1.3)
+plot(am1.3,pages=1,residuals=TRUE)
+```
+
+```{r, message=FALSE}
+# 3d estimated function
+library(rgl)
+x <- seq(min(agricul),max(agricul), length= 30)
+y <- seq(min(life.exp),max(life.exp), length= 30)
+f <- function(x,y) { r <- predict(am1.3, newdata=data.frame(agricul=x,life.exp=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "agricul", ylab = "life.exp", zlab = "inf.mort")
+```
+
+```{r, fig.asp=.75}
+# Additive model 4
+am1.4 <- gam(inf.mort ~ s(agricul) + s(life.exp) + ti(agricul,life.exp), data=countries)
+am1.4
+summary(am1.4)
+plot(am1.4,pages=1,residuals=TRUE)
+```
+
+```{r}
+# Additive model 5
+#am1.5 <- gam(inf.mort ~ agricul + life.exp + s(agricul,life.exp),              data=countries)
+am1.5 <- gam(inf.mort ~ agricul + life.exp + te(agricul,life.exp),             data=countries)
+am1.5
+summary(am1.5)
+plot(am1.5,pages=1,residuals=TRUE,pers=TRUE)
+```
+
+```{r, message=FALSE}
+# 3d estimated function
+library(rgl)
+x <- seq(min(agricul),max(agricul), length= 30)
+y <- seq(min(life.exp),max(life.exp), length= 30)
+f <- function(x,y) { r <- predict(am1.5, newdata=data.frame(agricul=x,life.exp=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "agricul", ylab = "life.exp", zlab = "inf.mort")
+```
+** ANOVA type tests ** 
+```{r}
+anova(am1.0,am1.2,test="F") # Used to compare the different models, null hypotesis that model 1 is correct
+# if p.value is significant, we reject the simpler model and use the complicate model, meaning that we reject the linear model
+```
+```{r}
+anova(am1.0,am1.1,test="F")
+```
+```{r}
+anova(am1.1,am1.2,test="F") # here since we have less df (negative value in df) -> it means that we are wrong in assuming that m1 is the simpler model, meaning that we have to change the order
+```
+```{r}
+anova(am1.2,am1.1,test="F") # here we change the model from the previous.
+```
+```{r}
+anova(am1.0,am1.3,test="F")
+```
+```{r}
+anova(am1.0,am1.5,test="F")
+```
+```{r}
+anova(am1.5,am1.3,test="F")
+```
+
+```{r}
+anova(am1.5,am1.1,test="F")
+```
+```{r}
+anova(am1.3,am1.1,test="F")
+```
+
+We conclude that model `am1.1` (the additive model) is the most appropriate among those we have compared.
+
+## Explaining `inf.mort`
+
+Repeat the last point using `agricul`, `life.exp.m` and ` life.exp.f` as explanatory variables and `inf.mort` as response.
+
+```{r}
+am2.0 <- gam(inf.mort ~ agricul +  life.exp.m +  life.exp.f, data=countries)
+summary(am2.0)
+```
+
+```{r, fig.asp=.75}
+am2.1 <- gam(inf.mort ~ s(agricul) +  s(life.exp.m) +  s(life.exp.f), data=countries)
+summary(am2.1)
+plot(am2.1,pages=1,residuals=TRUE,pers=TRUE)
+```
+
+```{r}
+am2.2 <- gam(inf.mort ~ s(agricul) +  s(life.exp.f), data=countries)
+summary(am2.2)
+plot(am2.2,pages=1,residuals=TRUE,pers=TRUE)
+```
+
+```{r}
+am2.3 <- gam(inf.mort ~ s(agricul) +  life.exp.f, data=countries)
+summary(am2.3)
+plot(am2.3,pages=1,residuals=TRUE,pers=TRUE)
+```
+
+**ANOVA type tests**
+```{r}
+anova(am2.0,am2.1,test="F")
+```
+```{r}
+anova(am2.0,am2.2,test="F")
+```
+```{r}
+anova(am2.2,am2.1,test="F")
+```
+```{r}
+anova(am2.1,am2.2,test="F")
+```
+
+Models `am2.1` and `am2.2` seem to be very similar. Simpler models are preferred. Additionally the term extra term `s(life.exp.m)` in model `am2.1` was not significant (`p-value 0.820598`). So model `am2.2` is preferred.
+
+```{r}
+anova(am2.3,am2.2,test="F")
+```
+
+We conclude that model `am2.2` is the most appropriate among those we have compared.
+
+
+# Generalized Additive Models
+
+## Binary nonparametric regression.  
+
+### Classify countries according to `agricul`. 
+
+The median value of variable `agricul` is 16. 
+Create a new binary variable `ind.agr` indicating for any country if variable `agricul` is lower than 16 (1) or not (0).
+This new variable is a development indicator.
+
+```{r}
+ind.agr<-(agricul<16)
+```
+
+Use function `gam` from package `mgcv`, with `family=binomial`, to fit the following additive models:
+
+* `ind.agr ~ life.exp + inf.mort`
+* `ind.agr ~ s(life.exp)`
+* `ind.agr ~ s(inf.mort)`
+* `ind.agr ~ s(life.exp) + s(inf.mort)`
+* `ind.agr ~ s(life.exp,inf.mort)`
+
+Use function `anova` to compare the models you fit two by two. Then propose a final model.
+
+```{r}
+gam1.0 <- gam(ind.agr ~ life.exp + inf.mort, data=countries,family=binomial) # GLM (logisitc regression)
+summary(gam1.0)
+```
+
+```{r}
+gam1.0.1 <- gam(ind.agr ~ life.exp, data=countries,family=binomial) # GLM (logisitc regression)
+summary(gam1.0.1)
+```
+
+```{r}
+gam1.1 <- gam(ind.agr ~ s(life.exp), data=countries,family=binomial)
+summary(gam1.1)
+plot(gam1.1,resid=TRUE)
+plot(gam1.1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))} # trans we do on the function
+     )
+```
+
+```{r}
+gam1.2 <- gam(ind.agr ~ s(inf.mort), data=countries,family=binomial)
+summary(gam1.2)
+plot(gam1.2,resid=T)
+plot(gam1.2,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+```
+
+```{r}
+gam1.3 <- gam(ind.agr ~ s(life.exp) + s(inf.mort), data=countries,family=binomial)
+summary(gam1.3)
+plot(gam1.3,pages=1,resid=T)
+plot(gam1.3,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+
+```
+
+```{r}
+# 3d estimated function
+library(rgl)
+x <- seq(min(life.exp),max(life.exp), length= 30)
+y <- seq(min(inf.mort),max(inf.mort), length= 30)
+# predicting with the nonparametric fit (type="link", default)
+f <- function(x,y) { r <- predict(gam1.3, newdata=data.frame(life.exp=x,inf.mort=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "life.exp", ylab = "inf.mort", zlab = "ind.agr")
+```
+
+```{r}
+# 3d estimated function
+# predicting the response variable
+fr <- function(x,y) { r <- predict(gam1.3, newdata=data.frame(life.exp=x,inf.mort=y), type="response")}
+zr <- outer(x, y, fr)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, zr, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "life.exp", ylab = "inf.mort", zlab = "ind.agr")
+```
+
+```{r}
+#gam1.4 <- gam(ind.agr ~ s(life.exp,inf.mort),    data=countries,family=binomial)
+#gam1.4 <- gam(ind.agr ~ te(life.exp,inf.mort),    data=countries,family=binomial)
+gam1.4 <- gam(ind.agr ~ ti(life.exp,inf.mort),    data=countries,family=binomial)
+summary(gam1.4)
+plot(gam1.4,pers=T)
+```
+
+```{r}
+# 3d estimated function
+library(rgl)
+x <- seq(min(life.exp),max(life.exp), length= 30)
+y <- seq(min(inf.mort),max(inf.mort), length= 30)
+f <- function(x,y) { r <- predict(gam1.4, newdata=data.frame(life.exp=x,inf.mort=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "life.exp", ylab = "inf.mort", zlab = "ind.agr")
+```
+
+**ANOVA type tests**
+
+```{r}
+anova(gam1.0,gam1.3,test="Chisq") # check parametric models vs against non parametric model
+```
+```{r}
+anova(gam1.1,gam1.3,test="Chisq")
+```
+```{r}
+anova(gam1.2,gam1.3,test="Chisq") # we should change the order of this too
+```
+```{r}
+anova(gam1.1,gam1.2,test="Chisq") # the first model is prefered
+```
+
+```{r}
+anova(gam1.0,gam1.4,test="Chisq")
+```
+```{r}
+anova(gam1.3,gam1.4,test="Chisq")
+```
+
+```{r}
+anova(gam1.0.1,gam1.1,test="Chisq")
+```
+
+We conclude that model `am1.0.1` (glm with one explanatory variable, `life.exp) is the most appropriate among those we have compared.
+
+
+### Classify countries according to `life.exp`. 
+
+The median value of variable `life.exp` is 68. 
+Create a new binary variable `ind.le` indicating for any country if variable `life.exp` is greater than 68 (1) or not (0).
+This new variable is a development indicator.
+
+```{r}
+ind.le<-(life.exp>68)
+```
+
+Use function `gam` from package `mgcv`, with `family=binomial`, to fit the following additive models:
+
+* `ind.le ~ inf.mort + le.fm`
+* `ind.le ~ s(inf.mort)` 
+* `ind.le ~ s(le.fm)`
+* `ind.le ~ s(inf.mort) + s(le.fm)`
+* `ind.le ~ s(inf.mort,le.fm)`
+
+Use function `anova` to compare the models you fit two by two. Then propose a final model.
+
+```{r}
+gam2.0 <- gam(ind.le ~ inf.mort + le.fm, data=countries,family=binomial)
+summary(gam2.0)
+```
+
+```{r}
+gam2.1 <- gam(ind.le ~ s(inf.mort), data=countries,family=binomial)
+summary(gam2.1)
+plot(gam2.1,resid=T)
+plot(gam2.1,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+
+```
+
+```{r}
+gam2.2 <- gam(ind.le ~ s(le.fm), data=countries,family=binomial)
+summary(gam2.2)
+plot(gam2.2,resid=T)
+plot(gam2.2,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+```
+
+```{r}
+gam2.3 <- gam(ind.le ~ s(inf.mort) + s(le.fm), data=countries,family=binomial)
+summary(gam2.3)
+plot(gam2.3,pages=1,resid=T)
+plot(gam2.3,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+```
+
+```{r}
+# 3d estimated function
+library(rgl)
+x <- seq(min(inf.mort),max(inf.mort), length= 30)
+y <- seq(min(le.fm),max(le.fm), length= 30)
+f <- function(x,y) { r <- predict(gam2.3, newdata=data.frame(inf.mort=x,le.fm=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "inf.mort", ylab = "le.fm", zlab = "ind.le")
+```
+
+```{r}
+fr <- function(x,y) { r <- predict(gam2.3, newdata=data.frame(inf.mort=x,le.fm=y),type="response")}
+zr <- outer(x, y, fr)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, zr, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "inf.mort", ylab = "le.fm", zlab = "ind.le")
+```
+
+```{r}
+gam2.4 <- gam(ind.le ~ s(inf.mort,le.fm), data=countries,family=binomial)
+summary(gam2.4)
+plot(gam2.4,pers=T)
+```
+
+```{r}
+# 3d estimated function
+library(rgl)
+x <- seq(min(inf.mort),max(inf.mort), length= 30)
+y <- seq(min(le.fm),max(le.fm), length= 30)
+f <- function(x,y) { r <- predict(gam2.4, newdata=data.frame(inf.mort=x,le.fm=y))}
+z <- outer(x, y, f)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, z, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "inf.mort", ylab = "le.fm", zlab = "ind.le")
+```
+
+```{r}
+fr <- function(x,y) { r <- predict(gam2.4, newdata=data.frame(inf.mort=x,le.fm=y),type="response")}
+zr <- outer(x, y, fr)
+open3d()
+bg3d("white")
+material3d(col="black")
+persp3d(x, y, zr, aspect=c(1, 1, 0.5), col = "lightblue",
+        xlab = "inf.mort", ylab = "le.fm", zlab = "ind.le")
+```
+
+```{r}
+gam2.5 <- gam(ind.le ~ s(inf.mort) + s(le.fm)+ s(inf.mort,le.fm), data=countries,family=binomial)
+summary(gam2.5)
+plot(gam2.5,pages=1,residuals=TRUE)
+plot(gam2.5,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+```
+
+````{r}
+plot(gam2.5,residuals=TRUE)
+plot(gam2.5,pers=T,pages=1,residuals=TRUE)
+```
+
+```{r}
+gam2.6 <- gam(ind.le ~ s(inf.mort) + s(inf.mort,le.fm), data=countries,family=binomial)
+summary(gam2.6)
+plot(gam2.6,pages=1,residuals=TRUE)
+plot(gam2.6,pages=1,resid=FALSE, se=TRUE, 
+     ylim=c(0,1),
+     shift=gam1.1$coefficients[1], 
+     trans=function(x){1/(1+exp(-x))}
+     )
+```
+
+```{r}
+plot(gam2.6,residuals=TRUE)
+plot(gam2.6,pers=T,pages=1,residuals=TRUE)
+```
+
+**ANOVA type tests**
+```{r}
+anova(gam2.0,gam2.3,test="Chisq")
+```
+```{r}
+anova(gam2.1,gam2.3,test="Chisq")
+```
+```{r}
+anova(gam2.2,gam2.3,test="Chisq")
+```
+```{r}
+anova(gam2.0,gam2.4,test="Chisq")
+```
+```{r}
+anova(gam2.1,gam2.3,test="Chisq")
+```
+```{r}
+anova(gam2.1,gam2.4,test="Chisq")
+```
+```{r}
+anova(gam2.1,gam2.6,test="Chisq")
+``` 
+
+## GAM for the Poisson nonparametric regression (EXERCISE)
+
+Variable `le.fm` always takes non-negative values, except for one country. Define the variable
+
+```{r}
+le.fm.0 <- pmax(0,le.fm)
+```
+
+Use function `gam` from package `mgcv`, with `family=poisson`, to fit the following local Poisson regression models: 
+
+* `le.fm.0 ~ inf.mort + life.exp` 
+* `le.fm.0 ~ s(inf.mort) + life.exp` 
+* `le.fm.0 ~ inf.mort + s(life.exp)` 
+* `le.fm.0 ~ s(inf.mort) + s(life.exp)` 
+* `le.fm.0 ~ s(inf.mort,life.exp)` 
+
+Use function `anova` to compare the models you fit two by two. Then propose a final model.
+
+
+
+# Hirsutism dataset (EXERCISE)
+Consider the Hirsutism dataset.
+Fit several semiparametric models explaining `FGm12` as a function of the variables that has been measured at the begining of the clinical trial (including `FGm0`) and `Treatment`.
+Then select the model (or models) that you think is most appropriate.
+
