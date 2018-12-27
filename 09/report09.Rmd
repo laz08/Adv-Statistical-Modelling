@@ -36,22 +36,81 @@ In fact, we can see overall how there is a decrease of the FG as the treatment h
 ```{r}
 
 par(mfrow=c(2,2))
-boxplot(hirs[,2]~Treatment,ylim=c(0,30))
-boxplot(hirs[,3]~Treatment,ylim=c(0,30))
-boxplot(hirs[,4]~Treatment,ylim=c(0,30))
-boxplot(hirs[,5]~Treatment,ylim=c(0,30))
+boxplot(hirs[,2]~Treatment,ylim=c(0,30), main="FG m0")
+boxplot(hirs[,3]~Treatment,ylim=c(0,30), main="FG m3")
+boxplot(hirs[,4]~Treatment,ylim=c(0,30), main="FG m6")
+boxplot(hirs[,5]~Treatment,ylim=c(0,30), main="FG m12")
 par(mfrow=c(1,1))
 
 par(mfrow=c(2,2))
-boxplot(hirs[Treatment==0,2:5],ylim=c(0,30))
-boxplot(hirs[Treatment==1,2:5],ylim=c(0,30))
-boxplot(hirs[Treatment==2,2:5],ylim=c(0,30))
-boxplot(hirs[Treatment==3,2:5],ylim=c(0,30))
+boxplot(hirs[Treatment==0,2:5],ylim=c(0,30), main="Treatment 0")
+boxplot(hirs[Treatment==1,2:5],ylim=c(0,30), main="Treatment 1")
+boxplot(hirs[Treatment==2,2:5],ylim=c(0,30), main="Treatment 2")
+boxplot(hirs[Treatment==3,2:5],ylim=c(0,30), main="Treatment 3")
 par(mfrow=c(1,1))
 ```
 
-Now if we take a look at the boxplots above where we are comparing the FG at different stages (months 0, 3, 6 and 12),
-... TODO
+Now if we take a look at the boxplots above where we are comparing the FG at different stages (months 0, 3, 6 and 12)
+with four different treatments.
+
+We can see how the tren of diminishing hirsutism may vary depending on the treatment the patient receives.
+For example, with treatment 0 the hirsutism seems to stabilize more than on the other 3 treatments.
+
+On treatment 1, the variance seems way greater than on the other treatments. Treatment 2 seems to not vary a lot and treatment 3 seems to have the most decrease on the hirsutism.
 
 We want to create a model that explains the FGm12 in function of the variables that were mesured
 at the beginning of the trial.
+
+### First model
+Let's start with a simple model.
+```{r}
+am1.0 <- gam(FGm12 ~ weight + height + DiaPres + SysPres + FGm0 + Treatment, data=hirs)
+am1.0
+summary(am1.0)
+```
+We can see how the weight, height, diaPres and SysPres are not relevant, and are only FGm0 and the treatments.
+So let's try to achieve a simpler model without the irrelevant variables.
+
+```{r}
+am1.1 <- gam(FGm12 ~FGm0 + Treatment, data=hirs)
+am1.1
+summary(am1.1)
+
+```
+This model does indeed look better and R squared is  greater than before.
+
+Now let's try yet another model with a smooth GAM with FGm0 for each treatment:
+```{r}
+am1.2 <- gam(FGm12 ~ s(FGm0, by=Treatment) + Treatment, data=hirs)
+am1.2
+summary(am1.2)
+plot.gam(am1.2, page=1, residuals=TRUE, shade=TRUE) 
+vis.gam(am1.2)
+```
+This model is quite interesting. We can see that Treatment 0 is the only one that does not seem to be linear whereas the other 3 are.
+
+
+Now we are going to create yet another model with a tensor product smooth for height and weight.
+```{r}
+am1.3 <- gam(FGm12 ~ s(FGm0, by=Treatment) + te(weight, height), data=hirs)
+am1.3
+summary(am1.3)
+plot.gam(am1.3, page=1, residuals=TRUE, shade=TRUE) 
+```
+
+Once again it appears that the weight and height are not relevant.
+
+Finally, we create the last model, with  a smooth for FGm0, weight and height separately.
+
+```{r}
+am1.4 <- gam(FGm12 ~ s(FGm0, by=Treatment) + s(weight) + s(height), data=hirs)
+am1.4
+summary(am1.4)
+plot.gam(am1.4, page=1, residuals=TRUE, shade=TRUE) 
+```
+Yet again, height and weight do not seem that relevant by looking at the p-value. However the R squared adjusted has increased again, which means the proportion of variance explained by this model is greater than before and around almost 37%.
+
+
+## Task 2
+
+Now we are going to use ANOVA to select the best model that best fits our data at hand and explains the hirsutism at the 12th month.
