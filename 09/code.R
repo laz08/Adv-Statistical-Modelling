@@ -56,8 +56,14 @@ plot.gam(am1.4, page=1, residuals=TRUE, shade=TRUE)
 
 #### Begin ANOVA ####
 
+# 48 vars
 anova(am1.1,am1.2,test="F") # Used to compare the different models, null hypotesis that model 1 is correct
 # Model 1.2 is better.
+
+# 47 vars
+anova(am1.3,am1.4,test="F")
+# Model 1.4 better.
+
 
 
 

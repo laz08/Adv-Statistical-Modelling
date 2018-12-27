@@ -3,9 +3,9 @@ title: 'GAMs 3: Generalized Additive Models'
 author: "Pedro Delicado"
 date: ""
 output:
-  html_notebook: default
   html_document:
     number_sections: yes
+  html_notebook: default
   pdf_document:
     fig_caption: yes
     number_sections: yes
