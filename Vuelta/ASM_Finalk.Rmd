@@ -1,0 +1,76 @@
+---
+title: "La Vuelta"
+author: "Laura Cebollero Ruiz, Alexandre Rodríguez Garau"
+date: "4th January, 2019"
+output: pdf_document
+---
+
+In this project we intend to predict the duration of the different stages of the cycling race *La Vuelta* using the information provided in the file $\texttt{Vuelta0.mtp}$. 
+
+
+```{r}
+library("readxl")
+library("knitr")
+library("ggplot2")
+```
+
+We have exported the data to an extension that R can read: `.csv`.
+
+```{r}
+data<- read.csv("Vuelta01.csv", sep = ';', header = TRUE, dec=",")
+```
+
+To predict the length of the stages we will use a set that contains 14 explanatory variables and a response variable called __`ForecastedTime`__. Let's take a look at the summary of the variables:
+
+```{r}
+kable(summary(data[,1:6]))
+kable(summary(data[,6:11]))
+kable(summary(data[,12:16]))
+
+```
+
+In the previous tables we can see a short summary of the variables. __`ports1`__, __`ports2`__ and __`ports3`__ indicate the number of mountain sections in a given stage and their category (1,2 or 3). __`year`__ corresponds to the year in which this data was recorded (1 to 6). __`Week`__ is the week of the race in wich the stage takes place (1 to 3). The variables __`bef_mount`__ and __`aft_mount`__ tell us whether a stage took place before or after a mountain stage, respectively. Similarly, the variables __`bef_tt`__ and __`aft_tt`__ indicate if a stage took place before or after a time trial stage. Finally, the variable __`last`__ tells us if that stage was the last of the whole race. 
+
+By the looks of the summary we can't seem to find any outliers or abnormal values. Most of the explanatory variables range from 0 to very low values and are natural numbers. The only continuous variables are __`ForecastedTime`__, __`Distance`__, __`HeightInc`__ and __`AccumIncr`__. This makes sense because the first variable indicates time and time is a continuous variable and the rest indicate distance which can also be continous. 
+
+The variable __`Distance`__ seems to be quite balanced with a mean of 193 and min and max values of 111 and 264 respectively. __`HeightIncr`__, however, is the only variable that presents negative values and has very high variance. Its minimum value is -940 and the maximum value is 2310. 
+
+By taking a closer look at the data we detect some abnormal values in the __`last`__ variable: Since this variable indicates if a stage was the last of the whole race, then there should as many stages with this value equal to 1 as years of data have been recorded. Since the recorded stages are from 6 different years then there should be 6 rows, but instead there are only 5, meaning that there is at least 1 missing stage. 
+
+```{r}
+data[data$last == 1,]
+```
+
+If we look at the data we can easily see that the missing value belongs to the year 3. However, this will probably not greatly affect our predicting power. There is something to be said about the variables __`year`__, __`week`__, __`bef_mount`__, __`aft_mount`__, __`bef_tt`__, __`aft_tt`__ and __`last`__: all of these variables are categorical and indicate the group or category a row belongs to. For this, we should transform these variables into factors.
+
+```{r}
+data$year      <- as.factor(data$year)
+data$week      <- as.factor(data$week)
+data$bef_mount <- as.factor(data$bef_mount)
+data$aft_mount <- as.factor(data$aft_mount)
+data$aft_tt    <- as.factor(data$aft_tt)
+data$bef_tt    <- as.factor(data$bef_tt)
+data$last      <- as.factor(data$last) 
+```
+\newpage
+Now that we have transformed the categorical columns to factors we should take another look at the summary of these variables:
+
+```{r}
+kable(summary(data[,9:15]))
+```
+
+We can se that for the variables __`year`__ and __`week`__ the variables are quite balanced, each group contains a very similar amount of observations. The rest, however, are more unbalanced. 
+
+Now, in order to find outliers and to see how the data behaves we will plot some boxplots. First of all we would like to see if the forecasted times are different depending on the year in which the race took place. 
+
+```{r}
+ggplot(data = data) +
+  aes(x = year, y = ForecastedTime) +
+  geom_boxplot(fill = "#4292c6") +
+  theme_minimal()
+```
+
+At first glance we see that the medians are really similar among all years, excepting year 3 and year 6, which are about 25 units higher. The interquartile ranges for every year are different. Even though the Q3 percentile is very similar for all years, the Q1 percentile varies from 225 to 300. It is important to say that there appears to be an outlier in the second year.
+
+
+#Fer més boxplots??
