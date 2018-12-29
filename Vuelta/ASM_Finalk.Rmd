@@ -5,6 +5,7 @@ date: "4th January, 2019"
 output: pdf_document
 ---
 
+# Introduction
 In this project we intend to predict the duration of the different stages of the cycling race *La Vuelta* using the information provided in the file $\texttt{Vuelta0.mtp}$. 
 
 
@@ -19,6 +20,9 @@ We have exported the data to an extension that R can read: `.csv`.
 ```{r}
 data<- read.csv("Vuelta01.csv", sep = ';', header = TRUE, dec=",")
 ```
+
+
+# Data exploration
 
 To predict the length of the stages we will use a set that contains 14 explanatory variables and a response variable called __`ForecastedTime`__. Let's take a look at the summary of the variables:
 
@@ -38,7 +42,7 @@ The variable __`Distance`__ seems to be quite balanced with a mean of 193 and mi
 By taking a closer look at the data we detect some abnormal values in the __`last`__ variable: Since this variable indicates if a stage was the last of the whole race, then there should as many stages with this value equal to 1 as years of data have been recorded. Since the recorded stages are from 6 different years then there should be 6 rows, but instead there are only 5, meaning that there is at least 1 missing stage. 
 
 ```{r}
-data[data$last == 1,]
+data[data$last == 1,]$year
 ```
 
 If we look at the data we can easily see that the missing value belongs to the year 3. However, this will probably not greatly affect our predicting power. There is something to be said about the variables __`year`__, __`week`__, __`bef_mount`__, __`aft_mount`__, __`bef_tt`__, __`aft_tt`__ and __`last`__: all of these variables are categorical and indicate the group or category a row belongs to. For this, we should transform these variables into factors.
@@ -59,7 +63,24 @@ Now that we have transformed the categorical columns to factors we should take a
 kable(summary(data[,9:15]))
 ```
 
-We can se that for the variables __`year`__ and __`week`__ the variables are quite balanced, each group contains a very similar amount of observations. The rest, however, are more unbalanced. 
+We can se that for the variables __`year`__ and __`week`__ the variables are quite balanced, each group contains a very similar amount of observations. The rest, however, are more unbalanced. `bef_mount` has more than twice 0s than 1s, which means there are twice the stages that do not precede a mountain stage. The same happens with `aft_mount`, which makes sense for it means there are only 31 stages after a mountain stage. Since they are the same numbers as the `bef_mount`, this tells us that the mountain stages are always in the middle and are not the first or last stages.
+
+In `bef_tt` there are 9 times more stages **not** preceding a time trial stage than does preceding it. There are 4 times less after trial stages.  And finally, as mentioned before, there are only 5 last stages and 100 that are normal ones.
+
+Let's finally take a closer look to the numerical attributes:
+```{r}
+num <- 6:8; num <- append(num, 16)
+kable(summary(data[,1:5]))
+kable(summary(data[,num]))
+```
+
+We can see that the mean and median in Time are pretty close, which means that there is not an outlier that drastically decreases or increases the mean. The same happens with Distance, AccumIncr and ForacastedTime. 
+
+However, HeightIncr has a low Median but a high mean, which means that in general there is not a stable increase of height but some stages have a high increase of it. And we can see that there is at least one stage that consists of a decrease of almost 1km, whereas there is at least one stage of an increase of over 2km.
+
+TODO: Comentar algo dels ports?
+
+# Data exploration visualization
 
 Now, in order to find outliers and to see how the data behaves we will plot some boxplots. First of all we would like to see if the forecasted times are different depending on the year in which the race took place. 
 
@@ -73,4 +94,32 @@ ggplot(data = data) +
 At first glance we see that the medians are really similar among all years, excepting year 3 and year 6, which are about 25 units higher. The interquartile ranges for every year are different. Even though the Q3 percentile is very similar for all years, the Q1 percentile varies from 225 to 300. It is important to say that there appears to be an outlier in the second year.
 
 
-#Fer més boxplots??
+
+```{r}
+ggplot(data = data) +
+  aes(x = year, y = Distance) +
+  geom_boxplot(fill = "#4292c6") +
+  theme_minimal()
+```
+
+In the plot above we can see how for each year, the distance does not vary a lot, except on the 3rd year, where there seems to be a higher overall distance but with small variance. The 1st year seems to be the one with most variance on distances between stages and the 5th one does not seem to vary so much, except on some stages qhere the distance differs more (between 100 and past 250). The 6th year seems to be the year with less variance in distance between stages.
+
+
+```{r}
+ggplot(data = data) +
+  aes(x = year, y = AccumIncr) +
+  geom_boxplot(fill = "#4292c6") +
+  theme_minimal()
+```
+Now, taking a look at the accumulated number of meters climbed on the stages for each year, 
+we can see that the 2nd year is the one with most variance and, in general, most of them
+vary a lot on the upper bound but not so much on the lower one.
+
+The 3rd year seems to be the one with a highest median and the 4th one seems to be the one with the lowest one.
+
+TODO: Fer més boxplots??
+TODO: Corr plot? Pero no ho hem fet a classe..
+
+# Generalized Linear Model
+
+
