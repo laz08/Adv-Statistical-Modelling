@@ -14,6 +14,7 @@ library("readxl")
 library("knitr")
 library("ggplot2")
 library("reshape2")
+library("MASS")
 ```
 
 We have exported the data to an extension that R can read: `.csv`.
@@ -147,12 +148,83 @@ The 3rd year seems to be the one with a highest median and the 4th one seems to 
 TODO: Fer més boxplots??
 TODO: Corr plot? Pero no ho hem fet a classe..
 
+
+# Model selection
+
+Let's first try creating a linear model. NO usage of Year.
+
+```{r}
+lm.model <- lm(Time ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data)
+summary(lm.model)
+```
+We can see we have a high adjusted R squared.
+Distance, heightIncr AccumIncr. Ports3 maybe.
+ We prune those irrelevant.
+ 
+```{r}
+lm.model2 <- lm(Time ~ Distance  + AccumIncr + ports2, data)
+summary(lm.model2)
+```
+R squared adj increases slightly. POrts2 irrelevanty.
+
+```{r}
+lm.model3 <- lm(Time ~ Distance  + AccumIncr, data)
+summary(lm.model3)
+```
+R adj squared decreased slightly. We keep this model because it has less param.
+
+
+## Residuals check.
+
+```{r}
+ncol(data)
+nrow(data)
+```
+Since we have 105 observations and 16 parameters, thus $$ N_{obs} >> p$$
+and we can check the histogram of standard residuals.
+```{r}
+hist(stdres(lm.model3), col="darkred")
+```
+The histogram shows a normal distrib.
+
+
+```{r}
+plot(fitted(lm.model3), stdres(lm.model3))
+abline(h=0, col="red")
+```
+
+We can see that there is no shape and the points are just scattered randomly, thus there is no pattern.
+
+It seems that 95% or more of the points range between -2 and 2, and thus we can see that Homocedasticity is complied because there is no shape.
+
+
+If we qqplot below the residuals we can see that the standardised residuals follow a normal distirbution and thus the normality assumption is satisfied.
+
+```{r}
+res = stdres(lm.model3)
+qqnorm(res); qqline(res)
+```
+
+Finally we are going to check the independence of resiudals against the predicted value:
+```{r}
+res <- residuals(lm.model3)
+plot(res ~ data$Time, ylab = 'Residuals', xlab = 'Time', main = 'Residuals VS Time')
+abline(h = 0, col='red')
+```
+We can see that there is indeed no pattern in the residuals vs time so we can assume independence of variables.
+
+
+
 # Generalized Linear Model
 
 Now we are going to try to model a Generalized Linear Model for our data in order to
 predict the Time.
 
-
+We assume Time follows a general probability distribution (not necessarily a Normal distribution),
+and we are going to assume there is some linearity between the transformation of Time $\mu$ where
+$$\mu = E(Time)$$
+ and the covariates.
+ 
 # Prediction
 
 In this section we are going to compare our predictions with those on the Forecasted by an expert.
