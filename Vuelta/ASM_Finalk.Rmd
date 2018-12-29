@@ -13,6 +13,7 @@ In this project we intend to predict the duration of the different stages of the
 library("readxl")
 library("knitr")
 library("ggplot2")
+library("reshape2")
 ```
 
 We have exported the data to an extension that R can read: `.csv`.
@@ -30,7 +31,6 @@ To predict the length of the stages we will use a set that contains 14 explanato
 kable(summary(data[,1:6]))
 kable(summary(data[,6:11]))
 kable(summary(data[,12:16]))
-
 ```
 
 In the previous tables we can see a short summary of the variables. __`ports1`__, __`ports2`__ and __`ports3`__ indicate the number of mountain sections in a given stage and their category (1,2 or 3). __`year`__ corresponds to the year in which this data was recorded (1 to 6). __`Week`__ is the week of the race in wich the stage takes place (1 to 3). The variables __`bef_mount`__ and __`aft_mount`__ tell us whether a stage took place before or after a mountain stage, respectively. Similarly, the variables __`bef_tt`__ and __`aft_tt`__ indicate if a stage took place before or after a time trial stage. Finally, the variable __`last`__ tells us if that stage was the last of the whole race. 
@@ -93,7 +93,33 @@ ggplot(data = data) +
 
 At first glance we see that the medians are really similar among all years, excepting year 3 and year 6, which are about 25 units higher. The interquartile ranges for every year are different. Even though the Q3 percentile is very similar for all years, the Q1 percentile varies from 225 to 300. It is important to say that there appears to be an outlier in the second year.
 
+Let's take a look at real Times:
+```{r}
+ggplot(data = data) +
+  aes(x = year, y = Time) +
+  geom_boxplot(fill = "#4292c6") +
+  theme_minimal()
+```
+ We can see how the highest Time is on the 3rd year, and there's a lot of variance on the
+ 1st and 5th years' races.
+ The second year seems to have some stages with a very high time, so there's a lot of variance on the upper bound,
+while on the 5th year there does is a lot of variance on the lower bound, meaning there are some stages with less Time than the rest. 
+The 5th year is the only one where this phenomena is so visible.
 
+ And let's compare the forecasted Times to the real Times:
+```{r}
+df1 <- data.frame(data$Time, data$ForecastedTime, data$year)
+df2 <- melt(df1, id.vars='data.year')
+
+ggplot(df2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see how the Forecasted time is pretty on par with the real time,
+so the prediction is very good and varies very little in small units.
+
+The worst predictions have been obtained on the 1st and 3rd year. And it has nailed
+the predictions on the 2nd, 5th and 6th year. An overestimation has been done on the 4th year.
 
 ```{r}
 ggplot(data = data) +
@@ -104,6 +130,7 @@ ggplot(data = data) +
 
 In the plot above we can see how for each year, the distance does not vary a lot, except on the 3rd year, where there seems to be a higher overall distance but with small variance. The 1st year seems to be the one with most variance on distances between stages and the 5th one does not seem to vary so much, except on some stages qhere the distance differs more (between 100 and past 250). The 6th year seems to be the year with less variance in distance between stages.
 
+Since the 4th year has very little distance, it may have affected the forecasted Time, which was above the real time.
 
 ```{r}
 ggplot(data = data) +
@@ -122,4 +149,11 @@ TODO: Corr plot? Pero no ho hem fet a classe..
 
 # Generalized Linear Model
 
+Now we are going to try to model a Generalized Linear Model for our data in order to
+predict the Time.
+
+
+# Prediction
+
+In this section we are going to compare our predictions with those on the Forecasted by an expert.
 
