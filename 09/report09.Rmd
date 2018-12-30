@@ -244,6 +244,7 @@ GCV = 23.247  Scale est. = 19.394    n = 91
 We can see that the worst model has a higher deviance explained and a higher variance explained, but the GCV is slightly higher, so in this case the am1.2 GCV is better.
 
 However, for us the real explanation is that am1.2 is a simpler model, and using height and weight is not that good.
+We have also tried to do the comparision with the chi squared test for anova and have achieved the same results as the F test.
 
 ## Comparison conclusions 
 
