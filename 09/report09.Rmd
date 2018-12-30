@@ -2,7 +2,9 @@
 title: "GAM Model"
 author: "Sergi Carol Laura Cebollero Alex Rodriguez"
 date: "December 30, 2018"
-output: pdf_document
+output:
+  pdf_document:
+    number_sections: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 The aim of this lab is to understand the GAM model and get an insight into the fitted model. The lab will consist of two different tasks, the first one will be to create different GAM models and see how well they fit the model. The second one will be to choose the best model according to our criteria.
 
-### Exercise 1
+# Exercise 1
 
 First of all, we are going to read the hirsutism dataset and explore it:
 
@@ -26,7 +28,10 @@ hirs$Treatment <- as.factor(hirs$Treatment)
 summary(hirs)
 head(hirs)
 attach(hirs)
+```
 
+
+```{r}
 boxplot(hirs[,2:5])
 ```
 
@@ -53,7 +58,7 @@ par(mfrow=c(1,1))
 Now if we take a look at the boxplots above where we are comparing the FG at different stages (months 0, 3, 6 and 12)
 with four different treatments.
 
-We can see how the tren of diminishing hirsutism may vary depending on the treatment the patient receives.
+We can see how the trend of diminishing hirsutism may vary depending on the treatment the patient receives.
 For example, with treatment 0 the hirsutism seems to stabilize more than on the other 3 treatments.
 
 On treatment 1, the variance seems way greater than on the other treatments. Treatment 2 seems to not vary a lot and treatment 3 seems to have the most decrease on the hirsutism.
@@ -61,14 +66,27 @@ On treatment 1, the variance seems way greater than on the other treatments. Tre
 We want to create a model that explains the FGm12 in function of the variables that were mesured
 at the beginning of the trial.
 
+## Missing values treatment
+
+We can see how there are some NA's in the dataset. Since taking them into account when creating the models
+will lead to having a diff. number of observations, we are going to remove them. Otherwise, we are not going
+to be able to perform a comparison of the models created using ANOVA.
+```{r}
+nrow(hirs)
+hirs = hirs[complete.cases(hirs), ]
+nrow(hirs)
+```
+We can see how 8 rows have been removed. Since there were 8 NAs in weight, height, DiaPres and SysPres, and 8 rows have been removed, it means there are are 8 observations that have NA in all of those 4 variables.
+
 ### First model
 Let's start with a simple model.
 ```{r}
 am1.0 <- gam(FGm12 ~ weight + height + DiaPres + SysPres + FGm0 + Treatment, data=hirs)
 am1.0
 summary(am1.0)
+
 ```
-We can see how the weight, height, diaPres and SysPres are not relevant, and are only FGm0 and the treatments.
+We can see how the weight, height, diaPres and SysPres are not relevant according to the p-value, and the relevant are only FGm0 and the treatments.
 So let's try to achieve a simpler model without the irrelevant variables.
 
 ```{r}
@@ -95,10 +113,10 @@ Now we are going to create yet another model with a tensor product smooth for he
 am1.3 <- gam(FGm12 ~ s(FGm0, by=Treatment) + te(weight, height), data=hirs)
 am1.3
 summary(am1.3)
-plot.gam(am1.3, page=1, residuals=TRUE, shade=TRUE) 
+plot.gam(am1.3, page=3, residuals=TRUE, shade=TRUE) 
 ```
 
-Once again it appears that the weight and height are not relevant.
+Once again it appears that the weight and height are not relevant and we can see that they are not very close in the plot and there are large gaps between the smooths.
 
 Finally, we create the last model, with  a smooth for FGm0, weight and height separately.
 
@@ -110,7 +128,131 @@ plot.gam(am1.4, page=1, residuals=TRUE, shade=TRUE)
 ```
 Yet again, height and weight do not seem that relevant by looking at the p-value. However the R squared adjusted has increased again, which means the proportion of variance explained by this model is greater than before and around almost 37%.
 
+```{r}
+am1.5 <- gam(FGm12 ~ s(FGm0, by=Treatment) + s(weight) + s(height) + Treatment, data=hirs)
+am1.5
+summary(am1.5)
+```
 
-## Task 2
+We can see that the deviance explained is now 50.6%, the variance explained is slightly greater and the GCV is OK. However, we can also see that s(weight) and s(height) are not significant according to the p-value, since they are way greater than our confidence interval's p-value, which is 0.05.
+
+
+# Task 2
 
 Now we are going to use ANOVA to select the best model that best fits our data at hand and explains the hirsutism at the 12th month.
+
+To do so, we are going to compare each model with the others using ANOVA.
+
+```{r}
+anova(am1.0, am1.1,test="F") 
+```
+First, we can see that the number of degrees freedom is negative. Thus, we should apply ANOVA reversing the order of the models in the function.
+
+```{r}
+anova(am1.1, am1.0,test="F") 
+```
+We can see how the p-value is way greater than 0.05, so we can establish that
+the first model am1.1 is better than am1.0.
+
+Let's take a summary of the models:
+```{r}
+summary(am1.0)
+summary(am1.1)
+```
+
+If we take a look at the summary of the models, although the R squared is slightly greater in am1.0 and although the deviance explained is slightly lower in the am1.1, the GCV is better in the am1.1. Also, the model is simpler in am1.1 since we are not taking taking into account the irrelevant variables that we found on am1.0. Thus, that's probably why ANOVA has chosen am1.0 over am1.1. 
+
+Now, having established that we prefer model am1.1 over am1.0, we are going to proceed comparing am1.1 with am1.2.
+
+```{r}
+anova(am1.1,am1.2,test="F")
+```
+First of all, the degrees of freedom are positive so we can proceed onto the comparison. 
+
+If we stick to an interval confidence of 95%, then the p-value is 0.05, and we can see that the p-value obtained is slightly smaller than 0.05. Which means it is in the limit of accepting that am1.2 model is better.
+
+Let's take a look at the summary of am1.2:
+```{r}
+summary(am1.2)
+```
+Let's recall that am1.1 had:
+```
+R-sq.(adj) =  0.179   Deviance explained = 21.5%
+GCV = 23.722  Scale est. = 22.418    n = 91
+```
+
+We can see that the variance explained, as seen in the R squared adjusted is greater in the am1.2 model. And if we take a look at the deviance explained, we can see that is is twice better explained in am1.2 too.  Finally, we can see that the GCV is better also in am1.2. So using the three metrics we can establish that am1.2 model is better than am1.1.
+
+Let's compare am1.2 with am1.3.
+```{r}
+anova(am1.2,am1.3,test="F")
+```
+Again, the degrees of freedom are positive, so we can proceed onto the comparison.
+The p-value is greater than 0.05, so it's possible that model am1.2 is better than am1.3.
+
+Let's take a look at the summary:
+```{r}
+summary(am1.3)
+```
+
+Remembering the summary of am1.2:
+```{r}
+summary(am1.2)
+```
+We can see that the GCV is almost the same, but the R adjusted squared and the deviance explained are slightly better on am1.3. However, a quick glance over the summary of am1.3 tells us that adding te(weight,height) (tensor product smooth) in the model is adding too much complexity on the model for a very small increase on variance and deviance explained. Thus, the tradeoff is too great and ANOVA seems to choose the simple model, which is am1.2.
+
+Thus, we are going to stick with am1.2 as the best model so far, and compare it with am1.4.
+
+```{r}
+anova(am1.2,am1.4,test="F")
+```
+
+We can see that the p-value is very close to 0.05 but still greater, so we may consider sticking to am1.2.
+
+Let's take a look at the am1.4 model:
+```{r}
+summary(am1.4)
+```
+
+And remembering the summary of am1.2:
+```
+R-sq.(adj) =   0.29   Deviance explained = 40.1%
+GCV = 23.247  Scale est. = 19.394    n = 91
+```
+We can see that am1.2 has a worse R squared, a worse percentage of deviance explained and a worse GCV. However, they are all slightly worse and, again, it seems that ANOVA sticks to the simpler model, which is am1.2, which takes into account the smooth of FGm0 by Treatment plus the Treatment used, against model am1.4 which actually creates a smooth of weight and height, which adds complexity and seems to be that good of a trade-off. Thus, this can explain ANOVA sticking to am1.2 by a small margin.
+
+Then, we are going to stick also with am1.2 and see how it compares with am1.5, which if we remember, is the same model as am1.4 but with Treatment.
+
+```{r}
+anova(am1.2,am1.5,test="F")
+```
+
+Again it seems to stick with am1.2, which means that the Fisher Test tells us to
+give preference the simplest model, which is am1.2, over am1.5, which is way more complex.
+
+```{r}
+summary(am1.5)
+```
+
+
+And remembering the summary of am1.2:
+```
+R-sq.(adj) =   0.29   Deviance explained = 40.1%
+GCV = 23.247  Scale est. = 19.394    n = 91
+```
+
+We can see that the worst model has a higher deviance explained and a higher variance explained, but the GCV is slightly higher, so in this case the am1.2 GCV is better.
+
+However, for us the real explanation is that am1.2 is a simpler model, and using height and weight is not that good.
+
+## Comparison conclusions 
+
+We have found that the model am1.2 is the best one, which is modeled as:
+```
+Formula:
+FGm12 ~ s(FGm0, by = Treatment) + Treatment
+```
+
+Although there were a couple of models that contested this model as being the best, since they had a better percentage of deviance explained as well as a greater variance explained (R adj. squared) and a slightly smaller GCV, with Fisher's test we have selected am1.2.
+
+This is due to this model being simpler and thus, we are not overfitting the model to the data we have.

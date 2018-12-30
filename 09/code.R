@@ -8,6 +8,8 @@ summary(hirs)
 head(hirs)
 attach(hirs)
 
+hirs = hirs[complete.cases(hirs), ]
+
 boxplot(hirs[,2:5])
 
 par(mfrow=c(2,2))
@@ -28,10 +30,13 @@ par(mfrow=c(1,1))
 am1.0 <- gam(FGm12 ~ weight + height + DiaPres + SysPres + FGm0 + Treatment, data=hirs)
 am1.0
 summary(am1.0)
+vis.gam(am1.0)
+
 # It seems that the weight, heigh, diaPres and SysPres are not relevant, lets try it without them to achieve a simpler model.
 am1.1 <- gam(FGm12 ~FGm0 + Treatment, data=hirs)
 am1.1
 summary(am1.1)
+
 
 # The model does indeed look better.
 
@@ -47,6 +52,7 @@ am1.3 <- gam(FGm12 ~ s(FGm0, by=Treatment) + te(weight, height), data=hirs)
 am1.3
 summary(am1.3)
 plot.gam(am1.3, page=1, residuals=TRUE, shade=TRUE) 
+# vis.gam(am1.3)
 # Once again it appears that the weight and height are not relevant.
 
 am1.4 <- gam(FGm12 ~ s(FGm0, by=Treatment) + s(weight) + s(height), data=hirs)
@@ -63,7 +69,9 @@ anova(am1.1,am1.2,test="F") # Used to compare the different models, null hypotes
 # 47 vars
 anova(am1.3,am1.4,test="F")
 # Model 1.4 better.
-
+# 
+anova(am1.1, am1.3, test="F")
+# degrees of freedom neg -> girar comp.
 
 
 
