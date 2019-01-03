@@ -153,16 +153,25 @@ vary a lot on the upper bound but not so much on the lower one.
 
 The 3rd year seems to be the one with a highest median and the 4th one seems to be the one with the lowest one.
 
-Now we are going to use a violin plot, similar to a box plot, to see where most ports are. For example, with portsE:
+Now we are going to use a boxplot to see where most ports are. For example, with portsE:
 ```{r}
 ggplot(data = data) +
   aes(x = year, y = portsE) +
-  geom_violin(scale = 'area', adjust = 1, fill = '#0c4c8a') +
+  geom_boxplot(scale = 'area', adjust = 1, fill = '#0c4c8a') +
   theme_minimal()
 ```
+We can see that that boxplot is not hat helpful, since we explained that it only has integer variables.
 
+Thus we are going to stick to the tables to see how the number of mountain passes distributes:
+```{r}
+table(data$portsE)
+table(data$ports1)
+table(data$ports2)
+table(data$ports3)
+```
+Looking at the ports tables we can see that in portsE, there are mostly no mountain passes, twelve cases with 1 pass and 2 exceptions with 2 passes. On the ports1 and ports2 the same happens but there are some stages where there are 1 or 2 passes, with 3 exceptions with 3 passes. Finally, in ports3 the tendency of having no passes still lasts but there are more cases of 2 passes and two stages with 4 passes, which are the exceptions on the tendency.
 
-
+## Correlation plot
 
 In order to see if we can find some kind of relation between the variables of our dataset we will use a correlations plot:
 
