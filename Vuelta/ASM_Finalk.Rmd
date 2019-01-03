@@ -2,7 +2,9 @@
 title: "La Vuelta"
 author: "Laura Cebollero Ruiz, Alexandre Rodríguez Garau"
 date: "4th January, 2019"
-output: pdf_document
+output:
+  pdf_document:
+    number_sections: yes
 ---
 
 # Introduction
@@ -191,7 +193,7 @@ Let's first try creating a linear model. We believe that the year has no influen
 lm.model <- lm(Time ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data)
 summary(lm.model)
 ```
-We can see we have a high adjusted R squared. However there are many varaibles that are not contributing to the the model, so we will take them away. The variables that we will keep are: Distance, heightIncr AccumIncr. We will also keep Ports3 even though it doesn't seem to be that important. 
+We can see we have a high adjusted R squared. However there are many variables that are not contributing to the the model, so we will take them away. The variables that we will keep are: Distance, heightIncr AccumIncr. We will also keep Ports2 even though it doesn't seem to be that important. 
 
 ```{r}
 lm.model2 <- lm(Time ~ Distance  + AccumIncr + ports2, data)
@@ -244,17 +246,189 @@ abline(h = 0, col='red')
 ```
 We can see that there is indeed no pattern in the residuals vs time so we can assume independence of variables.
 
+# Predictions
+
+Now we are going to use our model to predict the time of each stage:
+```{r}
+timePredictions <- predict(lm.model3, data)
+```
+
+Let's compare the predictions with the real time:
+```{r}
+dfOrg <- data.frame(timePredictions, data$Time, data$year)
+dfOrg2 <- melt(dfOrg, id.vars='data.year')
+
+ggplot(dfOrg2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+We can see that the predictions fall a little bit short  in the first 3 years, but are pretty accurate on the last 3 years.
+
+Let's compare the Time variables:
+
+- Time: The real time.
+- Forecasted Time: The time prediction made by an expert.
+- timePredictions: Our predictions using our model following the formula `Time ~ Distance + AccumIncr`.
+
+```{r}
+dfOrgExp <- data.frame(timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see how our predictions are pretty similar, almost identical, to those done by an expert.
+The only notable difference is that our model falls shorter on the prediction in the second year. 
+
+On the other hand, it does better in the 4th and 6th year, surpassing the real time way less than
+the prediction made by an expert, with surpasses the predictions by more units.
+
+In conclusion, looking at the graphic above, we are pretty satisfied with the model we have created and the predictions
+are good enough.
+
+
 # Generalized Linear Model
 
-Now we are going to try to model a Generalized Linear Model for our data in order to
-predict the Time.
+Having done a Linear Model, we have asked ourselves if there was any motivation to do a Generalized Linear Model.
 
-We assume Time follows a general probability distribution (not necessarily a Normal distribution),
-and we are going to assume there is some linearity between the transformation of Time $\mu$ where
-$$\mu = E(Time)$$
- and the covariates.
- 
-# Prediction
+As fas as we know, Time follows a Normal Distribution. This means that the response variable follows a Gaussian distribution, and thus the family of the GLM would be a Gaussian. Having as the link function the identity, then our Linear Model is a subcase of a Generalized Linear Model. Because of this, creating a GLM with a Gaussian and the identity as the link function implies having the same Linear Model that we have. 
 
-In this section we are going to compare our predictions with those on the Forecasted by an expert.
+Just to verify it, let's create a GLM with the same formula, stating that the family is Gaussian and that the link function is "identity".
+```{r}
+glm.model <-glm(Time ~ Distance + AccumIncr, data=data, family=gaussian(link="identity"))
+timePredGaussian <- predict(glm.model , data)
 
+dfOrgExp <- data.frame(timePredGaussian, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see how, indeed, the predictions are the same because the model is the same. 
+And if we take a look at the metrics, we can further state that, indeed, they are the same model:
+```{r}
+# m: model
+# df: Data Frame
+computeMetrics <- function(m, df) {
+  
+    cat("Deviance: ", deviance(m), "\n")
+    cat("AIC: ", AIC(m), "\n")
+    cat("Pearson test X^2: ", sum(residuals(m, type = "pearson")^2), "\n")  
+    cat(" X^2/(N-P): ", sum(residuals(m, type = "pearson")^2)/(nrow(df) - length(m$coefficients)), "\n")
+}
+computeMetrics(lm.model3, data)
+computeMetrics(glm.model, data)
+```
+
+## GLM: Gaussian distribution, link function: log
+Now, since we know that the Time follows a Normal distribution, we will keep the family as a Gaussian, but we will use
+as link function the logarithm. This means that once we have predicted the values we have to use an exponential to change
+them to the original units:
+
+```{r}
+glm.model2 <-glm(Time ~ Distance + AccumIncr, data=data, family=gaussian(link = "log"))
+timePredGaussianLog <- predict(glm.model2 , data)
+timePredGaussianLog <- exp(timePredGaussianLog)
+
+dfOrgExp <- data.frame(timePredGaussianLog, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see how this model seems to get closer to the real values in the first 3 years. However, we can see how it surpasses 
+by a great amount the prediction in the 5th year.
+
+## GLM: Gaussian distribution, link function: inverse
+
+Using the inverse as the link function does not help either:
+```{r}
+glm.model3 <-glm(Time ~ Distance + AccumIncr, data=data, family=gaussian(link = "inverse"))
+timePredGaussianInv <- predict(glm.model3 , data)
+timePredGaussianInv <- 1/timePredGaussianInv
+
+dfOrgExp <- data.frame(timePredGaussianInv, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+So we are going to stick to our Linear model as our predicting model, for now.
+
+## GLM: Gamma distribution, link function: identity
+
+Since time cannot be negative and is a continuous variable, we are going to consider using
+the Gamma distribution as the family distribution for the response variable.
+
+Let's first start with the identity as the link function:
+
+
+```{r}
+glm.model4 <-glm(Time ~ Distance + AccumIncr, data=data, family=Gamma(link = "identity"))
+timePredGammaId <- predict(glm.model4 , data)
+
+dfOrgExp <- data.frame(timePredGammaId, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+We can see how there's not much of an improvement using the identity as link function.
+Let's try using the logarithm:
+
+```{r}
+glm.model5 <-glm(Time~Distance + AccumIncr, data=data, family=Gamma(link="log"))
+timePredGammaLog <- predict(glm.model5 , data)
+timePredGammaLog <- exp(timePredGammaLog)
+
+dfOrgExp <- data.frame(timePredGammaLog, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+We can, again, see how there is an improvement over the linear model in the first 3 years, but a 
+greater amount on the prediction in the 4th and 5th years.
+
+## All models comparison
+```{r}
+
+dfOrgExp <- data.frame(timePredGaussian, timePredGaussianInv, timePredGaussianLog, timePredGammaId, timePredGammaLog, timePredictions, data$Time, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+
+Looking at the graphic above, we can see that all predictions are short on the first year.
+The Gaussian with inverse link function seems to be the one that performs better on the second year. However,
+it is also the worst performing on the 4th and 5th year, overestimating the time a lot.
+
+By looking at these comparisons, we prefer to use the linear model over any Generalized Linear model.
+
+
+# Conclusions
+
+After many tests and having checked the response variable, we can determine that:
+
+1. Time follows a Normal Distribution.
+2. Hypothesis of homocedasticity, normality and independence cannot be rejected.
+3. A Linear Model using Distance and AccumIncr seems to perform well with the data at hand and the predictions are quite accurate.
+4. We cannot justify the usage of a Generalized Linear Model. 
+
+## Future Estimations
+
+This model has been created using observations from 6 years. We think that with the data at hand, we would be able to estimate accurately enough the Time for the riders to finish each stage, as long as the organizers of `La Vuelta` do not change a lot other parameters than Distance and AccumIncr that may have a greater impact than now.
+
+For example, we can take a strange case where there are a lot of ports (mountain passes). We would not be taking them into account
+in our model. However, having a lot of ports may have an impact on the number of stops done by a rider, thus having an impact on the final time.
+
+However, organizers of `La Vuelta` tend and try to make the competition similar to other years so that it is fair
+for those competitors participating each year, so that having won on one year holds the same value as having won 3 years later.
+
+Thus, we think our model will hold well enough for another 15 `Vueltas` later, although having more data for more years
+would have been better, since we are trying to predict the Times for twice the years of data we have currently.
