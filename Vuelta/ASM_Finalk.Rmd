@@ -80,7 +80,14 @@ We can see that the mean and median in Time are pretty close, which means that t
 
 However, HeightIncr has a low Median but a high mean, which means that in general there is not a stable increase of height but some stages have a high increase of it. And we can see that there is at least one stage that consists of a decrease of almost 1km, whereas there is at least one stage of an increase of over 2km.
 
-TODO: Comentar algo dels ports?
+As for the ports, although it is a numerical variable, it actually uses integer values and natural ones should not allowed.
+We contemplated using the number of ports as a categorical variable. For example, in portsE we can see there are between 0 and 2 mountain passes:
+```{r}
+table(data$portsE)
+```
+
+However, by enforcing said restriction changing the variable as a categorical one, we would not be allowing new categorical variables like using 5 mountain passes in stage port3. Thus, meaning we would be restricted to a maximum of 3 in ports1 and ports2, 2 mountain passes on portsE, and a maximum of 4 mountain passes in ports3, which would not be correct, for maybe in the future they may be a case where there are 3 mountain passes in portsE, where there is still no case as seen in the table above.
+
 
 # Data exploration visualization
 
@@ -145,6 +152,17 @@ we can see that the 2nd year is the one with most variance and, in general, most
 vary a lot on the upper bound but not so much on the lower one.
 
 The 3rd year seems to be the one with a highest median and the 4th one seems to be the one with the lowest one.
+
+Now we are going to use a violin plot, similar to a box plot, to see where most ports are. For example, with portsE:
+```{r}
+ggplot(data = data) +
+  aes(x = year, y = portsE) +
+  geom_violin(scale = 'area', adjust = 1, fill = '#0c4c8a') +
+  theme_minimal()
+```
+
+
+
 
 In order to see if we can find some kind of relation between the variables of our dataset we will use a correlations plot:
 
