@@ -204,7 +204,44 @@ With this new model we can see that the adjusted $R^2$ has increased because we 
 lm.model3 <- lm(Time ~ Distance  + AccumIncr, data)
 summary(lm.model3)
 ```
-Both $R^2$ and Adjusted $R^2$ have decreased ever so slightly but, considering we took one parameter away we will keep this model.
+Both $R^2$ and Adjusted $R^2$ have decreased ever so slightly but, considering we took one parameter away we will probably keep this model.
+
+Performing a Chisquare test with anova, we can decide which model fits better:
+```{r}
+anova(lm.model2, lm.model, test="Chisq")
+```
+We can see that the p-value is greater than 0.05, so we are going to choose lm.model2 over lm.model, which has almost all variables.
+
+Now, if we check whether to choose lm.model3 or lm.model2, we can see that again the p-value is greater than 0.05, so we are
+going to choose the simpler model:  Time ~ Distance + AccumIncr.
+
+```{r}
+anova(lm.model3, lm.model2, test="Chisq")
+```
+
+Since these are nested models, we are going to check their deviance, AIC, perform again the Pearson test(Chi square):
+
+```{r}
+
+computeMetrics <- function(m, df) {
+  
+    cat("Deviance: ", deviance(m), "\n")
+    cat("AIC: ", AIC(m), "\n")
+    cat("Pearson test X^2: ", sum(residuals(m, type = "pearson")^2), "\n")  
+    cat(" X^2/(N-P): ", sum(residuals(m, type = "pearson")^2)/(nrow(df) - length(m$coefficients)), "\n")
+}
+cat(" \n * Metrics for lm.model \n ------- \n")
+computeMetrics(lm.model, data)
+cat(" \n\n * Metrics for lm.model2 \n ------- \n")
+computeMetrics(lm.model2, data)
+cat("\n\n * Metrics for lm.model3 \n ------- \n")
+computeMetrics(lm.model3, data)
+```
+
+We can see that the difference on the deviance on the 3 models is small. The lowest AIC is obtained with the third model, although only by a small margin. Performing the Chi square test we can see that the greatest value is found on the 3rd model, and is the same as the deviance, for we are working with a linear model, thus assuming a normal distribution.
+
+So we have decided to work with the linear model number 3, which is the simplest one, lm.model3, that follows the formula $$Time \sim Distance + AccumIncr$$
+
 
 ## Residuals check.
 
@@ -321,13 +358,66 @@ computeMetrics(lm.model3, data)
 computeMetrics(glm.model, data)
 ```
 
+## Formula change
+
+So, instead of using the previous formula chosen by us looking at the R squared and using the Pearson Test,
+we are going to select the terms by using the AIC on the model.
+
+So we start with the whole terms that we deem important, leaving out the years, for they should not determine the time and are only informative:
+
+```{r}
+glm.model <-glm(Time ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data=data, family=gaussian(link="identity"))
+```
+
+```{r results='hide'}
+glm.model = stepAIC(glm.model)
+```
+
+```{r}
+
+summary(glm.model)
+timePredGaussian <- predict(glm.model , data)
+
+dfOrgExp <- data.frame(timePredGaussian, timePredictions, data$Time, data$ForecastedTime, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see that the final formula is: $$Time \sim Distance + AccumIncr + ports1 + ports2$$
+so now it takes into account ports1 and ports2.
+
+The predictions have improved slightly on the 1st and 3rd but are not that well on the 2nd, 4th and 6th.
+So for now we prefer the linear model over this one.
+
+```{r}
+anova(lm.model3, glm.model, test='Chisq')
+```
+
+Additionally, using the Chi square test we can see that the residual sum of squares is greater on the first model, which is to be expected for it is a simpler model. However, looking at the p-value we can see that it is greater than 0.05, thus we are sticking with the simpler linear model.
+
+
 ## GLM: Gaussian distribution, link function: log
 Now, since we know that the Time follows a Normal distribution, we will keep the family as a Gaussian, but we will use
 as link function the logarithm. This means that once we have predicted the values we have to use an exponential to change
 them to the original units:
 
+
 ```{r}
-glm.model2 <-glm(Time ~ Distance + AccumIncr, data=data, family=gaussian(link = "log"))
+glm.model2 <-glm(Time  ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data=data, family=gaussian(link = "log"))
+```
+
+```{r results='hide'}
+glm.model2 = stepAIC(glm.model2)
+```
+```{r}
+summary(glm.model2)
+```
+
+We can see how the formula now takes into account ports1, 2 and 3, as well as the distance and AccumIncr as before.
+
+```{r}
 timePredGaussianLog <- predict(glm.model2 , data)
 timePredGaussianLog <- exp(timePredGaussianLog)
 
@@ -341,11 +431,32 @@ ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
 We can see how this model seems to get closer to the real values in the first 3 years. However, we can see how it surpasses 
 by a great amount the prediction in the 5th year.
 
+```{r}
+anova(lm.model3, glm.model2, test="Chisq")
+```
+
+Performing an anova with Chisquare test we can see how again we are going to stick with the Linear Model.
+
 ## GLM: Gaussian distribution, link function: inverse
+
+Let's check if using the inverse function serves any purpose or better results:
+
+```{r}
+glm.model3 <-glm(Time  ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data=data, family=gaussian(link = "inverse"))
+```
+
+```{r results='hide'}
+glm.model3 = stepAIC(glm.model3)
+```
+```{r}
+summary(glm.model3)
+```
+
+We can see how the formula now takes into bef_mount, as well as the distance and AccumIncr as before. Ports have been totally dismissed.
+
 
 Using the inverse as the link function does not help either:
 ```{r}
-glm.model3 <-glm(Time ~ Distance + AccumIncr, data=data, family=gaussian(link = "inverse"))
 timePredGaussianInv <- predict(glm.model3 , data)
 timePredGaussianInv <- 1/timePredGaussianInv
 
@@ -356,7 +467,14 @@ ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
     geom_bar(stat='identity', position='dodge')
 ```
 
-So we are going to stick to our Linear model as our predicting model, for now.
+The predictions are pretty far off on the 5th year but better on the rest of years.
+
+```{r}
+anova(lm.model3, glm.model3, test="Chisq")
+AIC(lm.model3)
+AIC(glm.model3)
+```
+We can see that the AIC are pretty similar, but it is smaller in the linear model. So we are going to stick to that one.
 
 ## GLM: Gamma distribution, link function: identity
 
