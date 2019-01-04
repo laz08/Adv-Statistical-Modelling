@@ -5,7 +5,16 @@ date: "4th January, 2019"
 output:
   pdf_document:
     number_sections: yes
+    toc: true
 ---
+
+\centering
+\raggedright
+
+\newpage
+\tableofcontents
+
+\newpage
 
 # Introduction
 In this project we intend to predict the duration of the different stages of the cycling race *La Vuelta* using the information provided in the file $\texttt{Vuelta0.mtp}$. 
@@ -474,7 +483,8 @@ anova(lm.model3, glm.model3, test="Chisq")
 AIC(lm.model3)
 AIC(glm.model3)
 ```
-We can see that the AIC are pretty similar, but it is smaller in the linear model. So we are going to stick to that one.
+We can see that the AIC are pretty similar, but it is smaller in the linear model. So we are going to stick to that one: the linear model.
+
 
 ## GLM: Gamma distribution, link function: identity
 
@@ -485,7 +495,18 @@ Let's first start with the identity as the link function:
 
 
 ```{r}
-glm.model4 <-glm(Time ~ Distance + AccumIncr, data=data, family=Gamma(link = "identity"))
+glm.model4 <-glm(Time  ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data=data, family=Gamma(link = "identity"))
+```
+
+```{r results='hide'}
+glm.model4 = stepAIC(glm.model4)
+```
+```{r}
+summary(glm.model4)
+```
+It seems we have sticked with the 3 ports as well as the Distance and AccumIncr, as before using the Gaussian family.
+
+```{r}
 timePredGammaId <- predict(glm.model4 , data)
 
 dfOrgExp <- data.frame(timePredGammaId, timePredictions, data$Time, data$ForecastedTime, data$year)
@@ -495,10 +516,36 @@ ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
     geom_bar(stat='identity', position='dodge')
 ```
 We can see how there's not much of an improvement using the identity as link function.
+
+
+```{r}
+anova(lm.model3, glm.model4, test="Chisq")
+AIC(lm.model3)
+AIC(glm.model4)
+```
+
+However, the AIC is lower on the Gamma model  using the identity as link function. 
+And using the Chi squared test, we can see how the p-value is lower than 0.05, 
+**so we are going to choose the Gamma model with identify as link function.**
+
+## GLM: Gamma distribution, link function: log
+
 Let's try using the logarithm:
 
 ```{r}
-glm.model5 <-glm(Time~Distance + AccumIncr, data=data, family=Gamma(link="log"))
+glm.model5 <-glm(Time  ~ Distance + HeightIncr + AccumIncr  + ports1 + ports2 + ports3 + bef_mount + aft_mount + bef_tt + aft_tt + last, data=data, family=Gamma(link = "log"))
+```
+
+```{r results='hide'}
+glm.model5 = stepAIC(glm.model5)
+```
+```{r}
+summary(glm.model5)
+```
+It seems we have sticked with ports3 as well as the Distance and AccumIncr.
+
+
+```{r}
 timePredGammaLog <- predict(glm.model5 , data)
 timePredGammaLog <- exp(timePredGammaLog)
 
@@ -511,7 +558,42 @@ ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
 We can, again, see how there is an improvement over the linear model in the first 3 years, but a 
 greater amount on the prediction in the 4th and 5th years.
 
+If we compare the results with the Gamma model with identity as the link function:
+
+```{r}
+dfOrgExp <- data.frame(timePredGammaLog, timePredGammaId, timePredictions, data$Time, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+We can see how the the predictions seem way more off overall.
+
+If we compare it with the first linear model:
+```{r}
+anova(lm.model3, glm.model5, test="Chisq")
+AIC(lm.model3)
+AIC(glm.model5)
+```
+We can see again how the Gamma model is preferred over the linear model. Its AIC is lower
+and performing the Pearson Test the p-value is lower than 0.05, **so we choose the Gamma with Log function over the linear model.**
+
+If we compare both gamma models, knowing that glm.model5 is a nested model of glm.model4:
+```{r}
+anova(glm.model5, glm.model4, test="Chisq")
+AIC(glm.model4)
+AIC(glm.model5)
+```
+
+We can see how the AIC is lower on the glm.model4, which is the model with a Gamma distribution with the identity as the link function.
+
+**Thus, we are going to stick with the glm.model4: Gamma distribution with identity function.**
+
 ## All models comparison
+
+Let's compare visually the Time predicted in all models:
+
 ```{r}
 
 dfOrgExp <- data.frame(timePredGaussian, timePredGaussianInv, timePredGaussianLog, timePredGammaId, timePredGammaLog, timePredictions, data$Time, data$year)
@@ -526,21 +608,35 @@ Looking at the graphic above, we can see that all predictions are short on the f
 The Gaussian with inverse link function seems to be the one that performs better on the second year. However,
 it is also the worst performing on the 4th and 5th year, overestimating the time a lot.
 
-By looking at these comparisons, we prefer to use the linear model over any Generalized Linear model.
+By looking at these comparisons, we can see how the predictions are pretty close to the real time in
+the cases of the Gamma+identity as link function, as well as the Linear model, the Gaussian with identity as link function as well, and the Gaussian with logarithm as link function.
 
+```{r}
+
+dfOrgExp <- data.frame(timePredGaussian, timePredGammaId, timePredGammaLog, timePredictions, data$Time, data$year)
+dfOrgExp2 <- melt(dfOrgExp, id.vars='data.year')
+
+ggplot(dfOrgExp2, aes(x=data.year, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge')
+```
+
+Visually and numerically by having tested the AIC, we determine that we can choose the Generalized Linear Model with Gamma as the distribution and the identity as the link function.
+
+\newpage
 
 # Conclusions
 
 After many tests and having checked the response variable, we can determine that:
 
-1. Time follows a Normal Distribution.
-2. Hypothesis of homocedasticity, normality and independence cannot be rejected.
+1. We cannot reject the hypothesis that Time follows a Normal Distribution.
+2. Hypothesis of homocedasticity and independence cannot be rejected as well having tested the residuals.
 3. A Linear Model using Distance and AccumIncr seems to perform well with the data at hand and the predictions are quite accurate.
-4. We cannot justify the usage of a Generalized Linear Model. 
+4. Taking a look at the AIC, we could justify the usage of a Generalized Linear Model, as long as the distribution chosen is the Gamma with the link function being the identity.
+5. With the data we have at hand, visually speaking, the time is generally worsely predicted with the GLM Gaussian+identity with respect to the Linear Model, which seems to do better.
 
 ## Future Estimations
 
-This model has been created using observations from 6 years. We think that with the data at hand, we would be able to estimate accurately enough the Time for the riders to finish each stage, as long as the organizers of `La Vuelta` do not change a lot other parameters than Distance and AccumIncr that may have a greater impact than now.
+This model has been created using observations from 6 years. We think that with the data at hand, we would be able to estimate accurately enough the Time for the riders to finish each stage, as long as the organizers of `La Vuelta` do not change a lot the other parameters that are not Distance and AccumIncr, for they may have a greater impact than now and we have not deemed them as important.
 
 For example, we can take a strange case where there are a lot of ports (mountain passes). We would not be taking them into account
 in our model. However, having a lot of ports may have an impact on the number of stops done by a rider, thus having an impact on the final time.
