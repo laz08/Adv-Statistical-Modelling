@@ -194,7 +194,7 @@ From this plot we immediately see that Time and Distance are highly correlated. 
 
 It also seems apparent that Time and ForecastedTime are highly correlated, which was to be expected since these two variables represent the same data and ForecastedTime is a prediction of the variable Time. No other relevant correlations can be observed.
 
-# Model selection
+# Linear Model selection
 
 Let's first try creating a linear model. We believe that the year has no influence over the stages so we will not include it into our model.
 
@@ -631,8 +631,12 @@ After many tests and having checked the response variable, we can determine that
 1. We cannot reject the hypothesis that Time follows a Normal Distribution.
 2. Hypothesis of homocedasticity and independence cannot be rejected as well having tested the residuals.
 3. A Linear Model using Distance and AccumIncr seems to perform well with the data at hand and the predictions are quite accurate.
-4. Taking a look at the AIC, we could justify the usage of a Generalized Linear Model, as long as the distribution chosen is the Gamma with the link function being the identity.
-5. With the data we have at hand, visually speaking, the time is generally worsely predicted with the GLM Gaussian+identity with respect to the Linear Model, which seems to do better.
+4. Said linear model follows the formula $$Time \sim Distance + AccumIncr$$ 
+5. Taking a look at the AIC, we could justify the usage of a Generalized Linear Model, as long as the distribution chosen is the Gamma with the link function being the identity.
+6. Said GLM with Gamma distribution and link function `identity` follows the formula $$Time \sim Distance + AccumIncr + ports1 + ports2 + ports3$$
+    
+7. We can see that it takes into account more parameters than the Linear Model, which are ports1, 2 and 3.
+8. With the data we have at hand, visually speaking, the time is generally worsely predicted with the GLM Gaussian+identity with respect to the Linear Model, which seems to do better.
 
 ## Future Estimations
 
