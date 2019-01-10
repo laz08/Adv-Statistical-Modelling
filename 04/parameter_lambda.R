@@ -19,6 +19,9 @@ train.sample <- which(prostate$train==TRUE)
 #use.only <- 1:dim(prostate)[1]
 use.only <- train.sample
 
+mean.train <- mean(prostate$lpsa[use.only])
+sd.train <- sd(prostate$lpsa[use.only])
+
 Y <- scale( prostate$lpsa[use.only], center=TRUE, scale=FALSE)
 X <- scale( as.matrix(prostate[use.only,1:8]), center=TRUE, scale=TRUE)
 n <- dim(X)[1]
@@ -30,8 +33,9 @@ lambda.max <- 1e5
 n.lambdas <- 25
 lambda.v <- exp(seq(0,log(lambda.max+1),length=n.lambdas))-1
 
-Xval <- scale(as.matrix(prostate[-use.only, 1:8]),  center=TRUE, scale=TRUE)
-Yval <- scale(prostate$lpsa[-use.only], center=TRUE, scale=FALSE)
+# Validation set must be centered and scaled using the mean and sd from the training set.
+Xval <- (as.matrix(prostate[-use.only, 1:8]) - mean.train) / sd.train
+Yval <- (prostate$lpsa[-use.only] - mean.train) / sd.train
 
 beta.path <- matrix(0,nrow=n.lambdas, ncol=p)
 diag.H.lambda <- matrix(0,nrow=n.lambdas, ncol=n)
