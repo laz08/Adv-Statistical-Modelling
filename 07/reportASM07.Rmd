@@ -46,11 +46,11 @@ loglik.CV <- function(x,y,h){
                    },   x,y,h)
     total_sum = 0
     for (i in 1:n){
-      total_sum = total_sum + (log((exp(pred[i]) * ((pred[i]**y[i])/factorial(y[i])))))/n
+      total_sum = total_sum + (log((exp(-pred[i]) * ((pred[i]**y[i])/factorial(y[i])))))/n
       # Incorrect:
       # total_sum = total_sum + (log((exp(-pred[i]) * ((pred[i]**y[i])/factorial(y[i])))^-i))/n
     }
-    return(total_sum)
+    return(-total_sum)
 }
 ```
 
