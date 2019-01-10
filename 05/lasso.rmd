@@ -159,6 +159,15 @@ legend("topright",
        )
 
 
+## Pedro correction. Use df.v.g
+lambda.glm <- m3.rr$lambda 
+df.v.g <- numeric(n.lambdas) 
+for (l in 1:n.lambdas){ 
+    lambda <- lambda.glm[l]
+    df.v.g[l] <- sum(d2/(d2+lambda))
+}
+plot(df.v.g, cvm, col=1,pch=19,cex=.75, ylab="MSE", xlab="Degrees of freedom", main="Comparison of MSE models")
+points(df.v.g, m4.rr,col=8,pch=19,cex=.75)
 ``` 
 
 In this plot we are comparing the values of the degrees of freedom against the mean square error.
