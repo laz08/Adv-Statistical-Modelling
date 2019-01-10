@@ -131,7 +131,7 @@ We have also calculated the ROC curve, which gives a general idea of how good th
 ## Logistic regression fitted by LASSO
 
 ```{r}
-m2 <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=FALSE, nfolds=10)
+m2 <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=TRUE, nfolds=10)
 plot(m2)
 
 y.pred <- predict(m2, x.val, type="response")
